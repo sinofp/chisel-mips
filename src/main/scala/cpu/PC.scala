@@ -1,6 +1,7 @@
 // See LICENSE for license details.
 
 package cpu
+
 import chisel3._
 
 class PC extends Module {

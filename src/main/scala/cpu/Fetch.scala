@@ -4,6 +4,7 @@ package cpu
 
 import chisel3._
 import chisel3.stage.ChiselStage
+import chisel3.util.MuxCase
 
 class Fetch extends Module {
   val io = IO(new Bundle() {
@@ -14,16 +15,18 @@ class Fetch extends Module {
     val inst = Output(UInt(32.W))
   })
 
+  import io._
+
   val pc_now = Wire(UInt(32.W))
-  io.pcp4 := pc_now + 4.U
+  pcp4 := pc_now + 4.U
 
   val pc = Module(new PC())
   pc_now := pc.io.pc_now
-  pc.io.pc_next := Mux(io.stall, pc_now, Mux(io.jump, io.pc_jump, io.pcp4))
+  pc.io.pc_next := MuxCase(pcp4, Array(stall -> pc_now, jump -> pc_jump))
 
   val inst_mem = Module(new InstMem())
   inst_mem.io.pc := pc_now
-  io.inst := inst_mem.io.inst
+  inst := inst_mem.io.inst
 }
 
 object Fetch extends App {
