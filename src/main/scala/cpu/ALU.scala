@@ -8,7 +8,7 @@ import Chisel._
 import chisel3.stage.ChiselStage
 
 object ALU {
-  val SZ_ALU_FN = 4
+  val SZ_ALU_FN = 4.W
 
   def FN_X = BitPat("b????")
 

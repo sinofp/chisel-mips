@@ -4,8 +4,7 @@ package cpu
 
 import chisel3._
 import chisel3.stage.ChiselStage
-
-import cpu.ALU._
+import cpu.ALU.SZ_ALU_FN
 
 class Decode extends Module {
   val io = IO(new Bundle() {
@@ -18,7 +17,7 @@ class Decode extends Module {
     val rdata1 = Output(UInt(32.W))
     val rdata2 = Output(UInt(32.W))
     val imm_ext = Output(UInt(32.W))
-    val alu_op = Output(UInt(SZ_ALU_FN.W))
+    val alu_op = Output(UInt(SZ_ALU_FN))
     val alu_src = Output(UInt(2.W))
     val pcp8 = Output(UInt(32.W))
     val reg_wen = Output(Bool())
