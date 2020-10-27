@@ -1,4 +1,4 @@
-// See README.md for license details.
+// See LICENSE for license details.
 
 def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
   Seq() ++ {

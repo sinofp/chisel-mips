@@ -1,3 +1,7 @@
+# Chisel generated Verilog
+*.anno.json
+*.fir
+*.v
 ### Project Specific stuff
 test_run_dir/*
 ### XilinxISE template
