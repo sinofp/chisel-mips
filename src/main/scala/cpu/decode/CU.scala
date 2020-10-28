@@ -10,7 +10,7 @@ import Instructions._
 
 object CtrlSigDef {
   // @formatter:off
-  // BR
+  // Br
   val SZ_BR_TYPE = 3.W
 
   def isBeq = (x: UInt) => x === 1.U(SZ_BR_TYPE)
@@ -19,6 +19,12 @@ object CtrlSigDef {
   def isBgtz = (x: UInt) => x === 4.U(SZ_BR_TYPE)
   def isBlez = (x: UInt) => x === 5.U(SZ_BR_TYPE)
   def isBltz = (x: UInt) => x === 6.U(SZ_BR_TYPE)
+
+  // Mem
+  val SZ_MEM_TYPE = 2.W
+  val MEM_WORD = 0.U(SZ_MEM_TYPE)
+  val MEM_HALF = 1.U(SZ_MEM_TYPE)
+  val MEM_BYTE = 2.U(SZ_MEM_TYPE)
 
   // Select
   // todo SIZE
