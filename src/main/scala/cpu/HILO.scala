@@ -10,21 +10,19 @@ class HILO extends Module {
     val wen = Input(Bool())
     val _hi = Input(UInt(32.W))
     val _lo = Input(UInt(32.W))
-    val hi_ = Output(UInt(32.W))
-    val lo_ = Output(UInt(32.W))
+    val hi = Output(UInt(32.W))
+    val lo = Output(UInt(32.W))
   })
 
   import io._
 
-  val hi = RegInit(0.U(32.W))
-  val lo = RegInit(0.U(32.W))
+  hi := RegNext(hi, 0.U)
+  lo := RegNext(lo, 0.U)
 
   when(wen) {
     hi := _hi
     lo := _lo
   }
-  hi_ := hi
-  lo_ := lo
 }
 
 object HILO extends App {
