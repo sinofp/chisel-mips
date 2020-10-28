@@ -12,13 +12,19 @@ object CtrlSigDef {
   // @formatter:off
   // Br
   val SZ_BR_TYPE = 3.W
+  val BR_TYPE_EQ = 1.U(SZ_BR_TYPE)
+  val BR_TYPE_NE = 2.U(SZ_BR_TYPE)
+  val BR_TYPE_GE = 3.U(SZ_BR_TYPE)
+  val BR_TYPE_GT = 4.U(SZ_BR_TYPE)
+  val BR_TYPE_LE = 5.U(SZ_BR_TYPE)
+  val BR_TYPE_LT = 6.U(SZ_BR_TYPE)
 
-  def isBeq = (x: UInt) => x === 1.U(SZ_BR_TYPE)
-  def isBne = (x: UInt) => x === 2.U(SZ_BR_TYPE)
-  def isBgez = (x: UInt) => x === 3.U(SZ_BR_TYPE)
-  def isBgtz = (x: UInt) => x === 4.U(SZ_BR_TYPE)
-  def isBlez = (x: UInt) => x === 5.U(SZ_BR_TYPE)
-  def isBltz = (x: UInt) => x === 6.U(SZ_BR_TYPE)
+  def isBeq = (x: UInt) => x === BR_TYPE_EQ
+  def isBne = (x: UInt) => x === BR_TYPE_NE
+  def isBgez = (x: UInt) => x === BR_TYPE_GE
+  def isBgtz = (x: UInt) => x === BR_TYPE_GT
+  def isBlez = (x: UInt) => x === BR_TYPE_LE
+  def isBltz = (x: UInt) => x === BR_TYPE_LT
 
   // Mem
   val SZ_MEM_TYPE = 2.W
