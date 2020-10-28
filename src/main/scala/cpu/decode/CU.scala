@@ -40,10 +40,11 @@ object CtrlSigDef {
   val SEL_ALU2_RT = 1.U(SZ_SEL_ALU2)
   val SEL_ALU2_ZERO = 2.U(SZ_SEL_ALU2)
 
-  val SEL_IMM_S = 0.U(SZ_SEL_IMM)
-  val SEL_IMM_U = 1.U(SZ_SEL_IMM)
-  val SEL_IMM_J = 2.U(SZ_SEL_IMM)
-  val SEL_IMM_SH = 3.U(SZ_SEL_IMM)
+  val SEL_IMM_U = 0.U(SZ_SEL_IMM)
+  val SEL_IMM_S = 1.U(SZ_SEL_IMM)
+  val SEL_IMM_B = 2.U(SZ_SEL_IMM) // USB!
+  val SEL_IMM_J = 3.U(SZ_SEL_IMM)
+  val SEL_IMM_SH = 4.U(SZ_SEL_IMM)
 
   val SEL_REG_WADDR_RD = 0.U(SZ_SEL_REG_WADDR)
   val SEL_REG_WADDR_RT = 1.U(SZ_SEL_REG_WADDR)

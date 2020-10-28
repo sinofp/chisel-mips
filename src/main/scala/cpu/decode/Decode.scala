@@ -11,7 +11,7 @@ import cpu.execute.ALU.SZ_ALU_FN
 class Decode extends Module {
   val io = IO(new Bundle() {
     val fd_inst = Input(UInt(32.W))
-    val pcp4 = Input(UInt(32.W))
+    val fd_pcp4 = Input(UInt(32.W))
     val wd_wen = Input(Bool())
     val wd_waddr = Input(UInt(5.W))
     val wd_wdata = Input(UInt(32.W))
@@ -25,11 +25,14 @@ class Decode extends Module {
     val de_num1 = Output(UInt(32.W))
     val de_num2 = Output(UInt(32.W))
     val de_reg_waddr = Output(UInt(5.W))
+    val de_pc = Output(UInt(32.W))
+    val de_br_addr = Output(UInt(32.W))
   })
 
   import io._
 
   val inst = RegNext(fd_inst, 0.U(32.W))
+  val pcp4 = RegNext(fd_pcp4, 0.U)
 
   val cu = Module(new CU)
   cu.inst := inst
@@ -68,11 +71,15 @@ class Decode extends Module {
   // 用val定义，格式化时不会被插入一个空行
   private val imm_is = sel => sel_imm === sel
   val imm_ext = MuxCase(0.U, Array(
-    imm_is(SEL_IMM_J) -> Cat(pcp4(31, 28), inst(25, 0), 0.U(2.W)),
-    imm_is(SEL_IMM_S) -> Cat(Fill(16, imm(15)), imm),
     imm_is(SEL_IMM_U) -> Cat(0.U(16.W), imm),
+    imm_is(SEL_IMM_S) -> Cat(Fill(16, imm(15)), imm),
+    imm_is(SEL_IMM_B) -> Cat(Fill(14, imm(15)), imm, 0.U(2.W)),
+    imm_is(SEL_IMM_J) -> Cat(pcp4(31, 28), inst(25, 0), 0.U(2.W)),
     imm_is(SEL_IMM_SH) -> Cat(0.U(27.W), inst(10, 6)),
   ))
+
+  de_br_addr := pcp4 + imm_ext
+  de_pc := pcp4 - 4.U
 
   private val alu_is = (no: Int, sel: UInt) => sel === (if (no == 1) sel_alu1 else sel_alu2)
   de_num1 := Mux(alu_is(1, SEL_ALU1_SA), imm_ext, rdata1)
