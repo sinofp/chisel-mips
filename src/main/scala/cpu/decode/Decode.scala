@@ -65,23 +65,27 @@ class Decode extends Module {
   val rdata1 = reg_file.io.rdata(0)
   val rdata2 = reg_file.io.rdata(1)
 
+  // 用val定义，格式化时不会被插入一个空行
+  private val imm_is = sel => sel_imm === sel
   val imm_ext = MuxCase(0.U, Array(
-    (sel_imm === SEL_IMM_J) -> Cat(pcp4(31, 28), inst(25, 0), 0.U(2.W)),
-    (sel_imm === SEL_IMM_LUI) -> Cat(imm, 0.U(16.W)),
-    (sel_imm === SEL_IMM_S) -> Cat(Fill(16, imm(15)), imm),
-    (sel_imm === SEL_IMM_U) -> Cat(0.U(16.W), imm),
-    (sel_imm === SEL_IMM_SH) -> Cat(0.U(27.W), inst(10, 6)),
+    imm_is(SEL_IMM_J) -> Cat(pcp4(31, 28), inst(25, 0), 0.U(2.W)),
+    imm_is(SEL_IMM_S) -> Cat(Fill(16, imm(15)), imm),
+    imm_is(SEL_IMM_U) -> Cat(0.U(16.W), imm),
+    imm_is(SEL_IMM_SH) -> Cat(0.U(27.W), inst(10, 6)),
   ))
 
-  de_num1 := Mux(sel_alu1 === SEL_ALU1_SA, imm_ext, rdata1)
+  private val alu_is = (no: Int, sel: UInt) => sel === (if (no == 1) sel_alu1 else sel_alu2)
+  de_num1 := Mux(alu_is(1, SEL_ALU1_SA), imm_ext, rdata1)
   de_num2 := MuxCase(rdata2, Array(
-    (sel_alu2 === SEL_ALU2_IMM) -> imm_ext, (sel_alu2 === SEL_ALU2_ZERO) -> 0.U)
+    alu_is(2, SEL_ALU2_IMM) -> imm_ext,
+    alu_is(2, SEL_ALU2_ZERO) -> 0.U)
   )
 
+  private val reg_waddr_is = sel => sel_reg_waddr === sel
   de_reg_waddr := MuxCase(0.U(32.W), Array(
-    (sel_reg_waddr === SEL_REG_WADDR_31) -> 31.U,
-    (sel_reg_waddr === SEL_REG_WADDR_RD) -> rd,
-    (sel_reg_waddr === SEL_REG_WADDR_RT) -> rt,
+    reg_waddr_is(SEL_REG_WADDR_31) -> 31.U,
+    reg_waddr_is(SEL_REG_WADDR_RD) -> rd,
+    reg_waddr_is(SEL_REG_WADDR_RT) -> rt,
   ))
 }
 
