@@ -1,12 +1,12 @@
 // See LICENSE for license details.
 
-package cpu
+package cpu.decode
 
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
-import cpu.ALU._
-import cpu.Instructions._
+import cpu.execute.ALU._
+import Instructions._
 
 object CtrlSigDef {
   // @formatter:off
@@ -55,7 +55,7 @@ object CtrlSigDef {
   // @formatter:on
 }
 
-import cpu.CtrlSigDef._
+import cpu.decode.CtrlSigDef._
 
 class CtrlSigs extends Bundle {
   val sel_alu1 = UInt(SZ_SEL_ALU1)

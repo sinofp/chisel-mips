@@ -2,7 +2,7 @@
 // See LICENSE.Berkeley for license details.
 // Modifications see LICENSE for license details.
 
-package cpu
+package cpu.execute
 
 import Chisel._
 import chisel3.stage.ChiselStage
@@ -42,7 +42,7 @@ object ALU {
   // @formatter:on
 }
 
-import cpu.ALU._
+import cpu.execute.ALU._
 
 class ALU extends Module {
   val xLen = 32

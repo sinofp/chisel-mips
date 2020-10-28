@@ -1,11 +1,11 @@
 // See LICENSE for license details.
 
-package cpu
+package cpu.execute
 
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
-import cpu.CtrlSigDef._
+import cpu.decode.CtrlSigDef._
 
 class BrUnit extends Module {
   val io = IO(new Bundle() {

@@ -1,10 +1,10 @@
 // See LICENSE for license details.
 
-package cpu
+package cpu.decode
 
 import chisel3._
 import chiseltest._
-import cpu.ALU._
+import cpu.execute.ALU._
 import org.scalatest._
 
 class CUTest extends FlatSpec with ChiselScalatestTester with Matchers {

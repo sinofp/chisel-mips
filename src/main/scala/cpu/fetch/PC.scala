@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package cpu
+package cpu.fetch
 
 import chisel3._
 

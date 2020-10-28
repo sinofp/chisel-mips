@@ -1,10 +1,10 @@
 // See LICENSE for license details.
 
-package cpu
+package cpu.decode
 
 import chisel3._
 import chisel3.stage.ChiselStage
-import cpu.ALU.SZ_ALU_FN
+import cpu.execute.ALU.SZ_ALU_FN
 
 class Decode extends Module {
   val io = IO(new Bundle() {

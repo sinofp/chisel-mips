@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package cpu
+package cpu.writeback
 
 import chisel3._
 import chisel3.stage.ChiselStage

@@ -1,6 +1,4 @@
-// See LICENSE for license details.
-
-package cpu
+package cpu.decode
 
 import chisel3.util.BitPat
 
