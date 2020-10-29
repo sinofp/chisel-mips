@@ -8,6 +8,8 @@ import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU._
 import org.scalatest._
 
+import scala.math.pow
+
 class ExecuteTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "Execute"
 
@@ -30,13 +32,18 @@ class ExecuteTest extends FlatSpec with ChiselScalatestTester with Matchers {
     test(new Execute) { c =>
       import c.io._
 
-      for (x <- 0 to 1) {
-        de_br_type.poke(BR_TYPE_GE)
-        de_alu_fn.poke(FN_SUB)
-        de_num1.poke(x.U)
-        de_num2.poke(0.U)
-        c.clock.step(1)
-        ef_branch.expect((x >= 0).B)
+      for (neg <- 1 to 1) {
+        for (i <- 0 to 1) {
+          val x = if (neg == 0) i else pow(2, 32).toInt - i // 0, 1, -1, -2
+          println("[log] neg is " + neg + ", x is " + x)
+          de_br_type.poke(BR_TYPE_GE)
+          de_alu_fn.poke(FN_SUB)
+          de_num1.poke(x.U)
+          de_num2.poke(0.U)
+          c.clock.step(2)
+          adder_out.expect(x.U)
+          ef_branch.expect((neg == 0).B)
+        }
       }
     }
   }
