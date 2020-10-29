@@ -81,6 +81,7 @@ class CtrlSigs extends Bundle {
   val sel_reg_waddr = UInt(SZ_SEL_REG_WADDR) // rs rt $31
   val sel_reg_wdata = UInt(SZ_SEL_REG_WDATA)
   val br_type = UInt(SZ_BR_TYPE)
+  val mem_size = UInt(SZ_MEM_TYPE)
   // todo ...?
 }
 
@@ -95,8 +96,8 @@ class CU extends MultiIOModule {
   private def is(bp: BitPat) = inst === bp
 
   out := MuxCase(0.U(outW), Array(
-    is(ADD) -> Cat(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX),
-    is(ADDI) -> Cat(SEL_ALU1_RS, SEL_ALU2_IMM, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX),
+    is(ADD) -> Cat(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
+    is(ADDI) -> Cat(SEL_ALU1_RS, SEL_ALU2_IMM, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
   ))
 
   ctrl <> out.asTypeOf(new CtrlSigs)

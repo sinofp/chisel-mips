@@ -33,6 +33,9 @@ class DataMem extends Module {
     (size === MEM_HALF) -> Cat(Fill(16, 0.U), wdata(15, 0)),
     (size === MEM_BYTE) -> Cat(Fill(24, 0.U), wdata(7, 0)),
   ))
+
+  printf(p"[log DataMem] wen = $wen, addr = ${Binary(addr)}, wdata = ${Binary(wdata)}, " +
+    p"size = ${Binary(size)}, rdata_word = ${Binary(rdata_word)},  rdata = ${Binary(rdata)}\n")
 }
 
 object DataMem extends App {

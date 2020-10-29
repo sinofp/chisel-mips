@@ -27,6 +27,8 @@ class Decode extends Module {
     val de_reg_waddr = Output(UInt(5.W))
     val de_pc = Output(UInt(32.W))
     val de_br_addr = Output(UInt(32.W))
+    val de_mem_wdata = Output(UInt(32.W))
+    val de_mem_size = Output(UInt(SZ_MEM_TYPE))
   })
 
   import io._
@@ -45,6 +47,7 @@ class Decode extends Module {
     de_reg_wen := reg_wen
     de_sel_reg_wdata := sel_reg_wdata
     de_br_type := br_type
+    de_mem_size := mem_size
   }
   val sel_alu1 = cu.ctrl.sel_alu1
   val sel_alu2 = cu.ctrl.sel_alu2
@@ -67,6 +70,7 @@ class Decode extends Module {
   }
   val rdata1 = reg_file.io.rdata(0)
   val rdata2 = reg_file.io.rdata(1)
+  de_mem_wdata := rdata2
 
   // 用val定义，格式化时不会被插入一个空行
   private val imm_is = sel => sel_imm === sel

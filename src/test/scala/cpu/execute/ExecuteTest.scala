@@ -23,7 +23,7 @@ class ExecuteTest extends FlatSpec with ChiselScalatestTester with Matchers {
         de_num1.poke(x.U)
         de_num2.poke(y.U)
         c.clock.step(1)
-        adder_out.expect((x - y).U)
+        em_alu_out.expect((x - y).U)
       }
     }
   }
