@@ -16,16 +16,6 @@ class BrUnit extends Module {
   })
 
   val isNotZero = io.sub_res =/= 0.U
-//  val isPos = io.sub_res === BitPat("b0" + "?"*31)
-//  val isPos = Wire(UInt(32.W))
-//  when(io.sub_res === BitPat("b0" + "?"*31)) {
-//    isPos := true.B
-//  }.otherwise {
-//    isPos := false.B
-//  }
-//  val isPos = Mux(io.sub_res(31), true.B, false.B)
-//  val isPos = Fill(32, io.sub_res(31)) === 0.U
-//  val isPos = io.sub_res(31) === false.B
   val isPos = io.sub_res(31) === 0.U
   printf(p"[log BrUint] io.sub_res = ${Binary(io.sub_res)}, isPos = $isPos, isNotZero = $isNotZero\n")
 

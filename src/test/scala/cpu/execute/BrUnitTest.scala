@@ -6,6 +6,8 @@ import chisel3._
 import chiseltest._
 import cpu.decode.CtrlSigDef._
 import org.scalatest._
+import chiseltest.experimental.TestOptionBuilder._
+import chiseltest.internal.VerilatorBackendAnnotation
 
 import scala.math.pow
 
@@ -13,20 +15,15 @@ class BrUnitTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "BrUnit"
 
   it should "compare with zero as signed" in {
+    // test(new BrUnit).withAnnotations(Seq(VerilatorBackendAnnotation)) { c =>
     test(new BrUnit) { c =>
-
-      for (neg <- 0 to 1) {
-        for (i <- 0 to 1) {
-          val x = if (neg == 0) i else pow(2, 32).toInt - i // 0, 1, -1, -2
-          println("[log] neg is " + neg + ", x is " + x)
-          c.io.br_type.poke(BR_TYPE_GE)
-          c.io.sub_res.poke(x.U)
-          c.clock.step(5)
-//          c.isNotZero.expect((x == 0).B)
-//          c.isPos.expect((neg == 0).B)
-//          branch.expect((neg == 0).B)
-        }
-      }
+      // 0, 1, -1, -2
+      // 负数的话，用scala的Int转UInt有问题
+      Seq("0" * 32, "0" * 31 + "1", "1" * 32, "1" * 31 + "0").foreach(s => {
+        c.io.br_type.poke(BR_TYPE_GE)
+        c.io.sub_res.poke(("b" + s).U)
+        c.io.branch.expect((s(0) == '0').B)
+      })
     }
   }
 }
