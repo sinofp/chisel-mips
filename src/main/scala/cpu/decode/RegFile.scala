@@ -4,8 +4,9 @@ package cpu.decode
 
 import chisel3._
 import chisel3.stage.ChiselStage
+import cpu.util.Config
 
-class RegFile(readPorts: Int) extends Module {
+class RegFile(readPorts: Int)(implicit c: Option[Config] = None) extends Module {
   require(readPorts >= 0)
   val io = IO(new Bundle() {
     val wen = Input(Bool())

@@ -6,8 +6,9 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
+import cpu.util.{Config, DefCon}
 
-class DataMem extends Module {
+class DataMem(implicit c: Option[Config] = None) extends Module {
   val io = IO(new Bundle() {
     val addr = Input(UInt(32.W))
     val wen = Input(Bool())
@@ -34,8 +35,10 @@ class DataMem extends Module {
     (size === MEM_BYTE) -> Cat(Fill(24, 0.U), wdata(7, 0)),
   ))
 
-  printf(p"[log DataMem] wen = $wen, addr = ${Binary(addr)}, wdata = ${Binary(wdata)}, " +
-    p"size = ${Binary(size)}, rdata_word = ${Binary(rdata_word)},  rdata = ${Binary(rdata)}\n")
+  if (c.getOrElse(DefCon).debugDataMem) {
+    printf(p"[log DataMem] wen = $wen, addr = ${Binary(addr)}, wdata = ${Binary(wdata)}, " +
+      p"size = ${Binary(size)}, rdata_word = ${Binary(rdata_word)},  rdata = ${Binary(rdata)}\n")
+  }
 }
 
 object DataMem extends App {

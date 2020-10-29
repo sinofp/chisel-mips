@@ -7,8 +7,9 @@ import chisel3.stage.ChiselStage
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU.SZ_ALU_FN
+import cpu.util.Config
 
-class Decode extends MultiIOModule {
+class Decode(implicit c: Option[Config] = None) extends MultiIOModule {
   val fd = IO(new Bundle() {
     val inst = Input(UInt(32.W))
     val pcp4 = Input(UInt(32.W))

@@ -4,8 +4,9 @@ package cpu.fetch
 
 import chisel3._
 import chisel3.stage.ChiselStage
+import cpu.util.Config
 
-class InstMem extends Module {
+class InstMem(implicit c: Option[Config] = None) extends Module {
   val io = IO(new Bundle() {
     val pc = Input(UInt(32.W))
     val inst = Output(UInt(32.W))

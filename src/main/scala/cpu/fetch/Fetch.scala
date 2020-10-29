@@ -5,8 +5,9 @@ package cpu.fetch
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
+import cpu.util.Config
 
-class Fetch extends MultiIOModule {
+class Fetch(implicit c: Option[Config] = None) extends MultiIOModule {
   val ef = IO(new Bundle() {
     val pc_jump = Input(UInt(32.W))
     val jump = Input(Bool())

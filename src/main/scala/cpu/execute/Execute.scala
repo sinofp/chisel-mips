@@ -6,8 +6,9 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import cpu.decode.CtrlSigDef.{SZ_BR_TYPE, SZ_MEM_TYPE, SZ_SEL_REG_WDATA}
 import cpu.execute.ALU.SZ_ALU_FN
+import cpu.util.{Config, DefCon}
 
-class Execute extends MultiIOModule {
+class Execute(implicit c: Option[Config] = None) extends MultiIOModule {
   val de = IO(new Bundle() {
     val pc = Input(UInt(32.W))
     val alu_fn = Input(UInt(SZ_ALU_FN))
@@ -67,7 +68,9 @@ class Execute extends MultiIOModule {
   val adder_out = Wire(UInt(32.W))
   adder_out := alu.io.adder_out
 
-  printf(p"[log execute] in1 = ${Binary(de.num1)}, in2 = ${Binary(de.num2)}, adder_out = ${Binary(adder_out)}\n")
+  if (c.getOrElse(DefCon).debugExecute) {
+    printf(p"[log execute] in1 = ${Binary(de.num1)}, in2 = ${Binary(de.num2)}, adder_out = ${Binary(adder_out)}\n")
+  }
 
   val br_unit = Module(new BrUnit)
   locally {
