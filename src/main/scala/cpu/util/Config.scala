@@ -15,7 +15,8 @@ class Config(
     val debugMemory: Boolean = false,
     val debugDataMem: Boolean = false,
     val debugWriteback: Boolean = false,
-    val debugHILO: Boolean = false
+    val debugHILO: Boolean = false,
+    val inputInst: Boolean = false,
 ) {}
 
 object DefCon extends Config
