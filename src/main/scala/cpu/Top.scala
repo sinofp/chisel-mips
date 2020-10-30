@@ -4,7 +4,6 @@ package cpu
 
 import chisel3._
 import chisel3.stage.ChiselStage
-import cpu.util.port.InputInst
 import cpu.decode.Decode
 import cpu.execute.Execute
 import cpu.fetch.Fetch
@@ -34,13 +33,6 @@ class Top(implicit c: Option[Config] = None) extends MultiIOModule {
   execute.de <> decode.de
   memory.em <> execute.em
   writeback.mw <> memory.mw
-
-  val inputInst = c.getOrElse(DefCon).inputInst
-  val ii = if (inputInst) Some(IO(Input(new InputInst))) else None
-  println(s"[log Top] inputInst = $inputInst, ii.wen = $ii.wen")
-  if (ii.isDefined) {
-    fetch.ii.get <> ii.get
-  }
 }
 
 object Top extends App {

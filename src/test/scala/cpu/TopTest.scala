@@ -11,29 +11,15 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "Top"
 
   it should "work" in {
-    implicit val c: Option[Config] = Some(new Config(inputInst = true))
+    val insts = Array(
+      "20080064", // addi $t0, $0, 100
+      "20090000", // addi $t1, $0, 0
+      "01095020", // addi $t0, $0, 100
+    ).map("h" + _).map(_.U)
+    implicit val c: Option[Config] = Some(new Config(insts = insts))
     test(new Top) { c =>
-      // 输入指令
-      val insts = Array(
-        "20080064",
-        "20090000",
-        "01095020",
-      ).map("h" + _).map(_.U)
-
-      for (i <- insts.indices) {
-        c.ii.get.wen.poke(true.B)
-        c.ii.get.waddr.poke(i.U)
-        c.ii.get.wdata.poke(insts(i))
-        c.clock.step(1)
-      }
-      //todo
-//      import c.fetch.inst_mem.io._
-//      // 看看指令对不对，别被别的冲了
-//      for (i <- insts.indices) {
-//        pc.poke((i * 4).U)
-//        c.clock.step(1)
-//        inst.expect(insts(i))
-//      }
+      // todo 看看RegFile的内容对不对
+      c.clock.step(100)
     }
   }
 }

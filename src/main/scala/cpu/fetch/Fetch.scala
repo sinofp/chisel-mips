@@ -5,7 +5,6 @@ package cpu.fetch
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
-import cpu.util.port.InputInst
 import cpu.util.{Config, DefCon}
 
 class Fetch(implicit c: Option[Config] = None) extends MultiIOModule {
@@ -20,10 +19,6 @@ class Fetch(implicit c: Option[Config] = None) extends MultiIOModule {
     val inst = Output(UInt(32.W))
   })
 
-  val inputInst = c.getOrElse(DefCon).inputInst
-  println(s"[log Fetch] inputInst = $inputInst")
-  val ii = if (inputInst) Some(IO(Input(new InputInst))) else None
-
   val pc_now = Wire(UInt(32.W))
   fd.pcp4 := pc_now + 4.U
 
@@ -34,9 +29,6 @@ class Fetch(implicit c: Option[Config] = None) extends MultiIOModule {
   val inst_mem = Module(new InstMem())
   inst_mem.io.pc := pc_now
   fd.inst := inst_mem.io.inst
-  if (ii.isDefined) {
-    inst_mem.ii.get <> ii.get
-  }
 
   if (debug) {
     printf(p"[log Fetch] pc_now = $pc_now, pcp4 = ${fd.pcp4}\n")

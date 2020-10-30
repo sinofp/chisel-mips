@@ -10,16 +10,13 @@ import org.scalatest._
 class InstMemTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "InstMem"
 
-  it should "be able to write inst" in {
-    implicit val conf = Some(new Config(inputInst = true, debugInstMem = true))
+  it should "be able to write inst rom" in {
+    val last = 10
+    val insts = (0 to last).map(_.U)
+    implicit val conf: Option[Config] = Some(new Config(insts = insts, debugInstMem = true))
     test(new InstMem) { c =>
       import c.io._
-      val ii = c.ii.get
-      import ii._
-      for (x <- 1 to 10) {
-        wen.poke(true.B)
-        waddr.poke(x.U)
-        wdata.poke(x.U)
+      for (x <- 1 to last) {
         pc.poke((x*4).U)
         c.clock.step(1)
         inst.expect(x.U)
