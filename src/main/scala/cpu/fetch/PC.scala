@@ -3,7 +3,7 @@
 package cpu.fetch
 
 import chisel3._
-import cpu.util.Config
+import cpu.util.{Config, DefCon}
 
 class PC(implicit c: Option[Config] = None) extends Module {
   val io = IO(new Bundle() {

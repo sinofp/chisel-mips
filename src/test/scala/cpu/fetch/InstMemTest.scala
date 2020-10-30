@@ -14,6 +14,8 @@ class InstMemTest extends FlatSpec with ChiselScalatestTester with Matchers {
     implicit val conf = Some(new Config(inputInst = true, debugInstMem = true))
     test(new InstMem) { c =>
       import c.io._
+      val ii = c.ii.get
+      import ii._
       for (x <- 1 to 10) {
         wen.poke(true.B)
         waddr.poke(x.U)

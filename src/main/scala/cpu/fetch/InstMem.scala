@@ -4,19 +4,19 @@ package cpu.fetch
 
 import chisel3._
 import chisel3.stage.ChiselStage
+import cpu.util.port.InputInst
 import cpu.util.{Config, DefCon}
 
-class InstMem(implicit c: Option[Config] = None) extends Module {
+class InstMem(implicit c: Option[Config] = None) extends MultiIOModule {
 
   val inputInst = c.getOrElse(DefCon).inputInst
 
+  println(s"[log InstMem] inputInst = $inputInst")
   val io = IO(new Bundle() {
     val pc = Input(UInt(32.W))
     val inst = Output(UInt(32.W))
-    val wen = Input(if (inputInst) Bool() else UInt(0.W))
-    val waddr = Input(if (inputInst) UInt(5.W) else UInt(0.W))
-    val wdata = Input(if (inputInst) UInt(32.W) else UInt(0.W))
   })
+  val ii = if (inputInst) Some(IO(Input(new InputInst))) else None
 
   val mem = if (inputInst) {
     RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
@@ -33,8 +33,11 @@ class InstMem(implicit c: Option[Config] = None) extends Module {
 
   io.inst := mem(io.pc / 4.U)
 
-  when(io.wen === 1.U) {
-    mem(io.waddr) := io.wdata // 别写覆盖了
+  if (ii.isDefined) {
+    val io = ii.get
+    when(io.wen === 1.U) {
+      mem(io.waddr) := io.wdata // 别写覆盖了
+    }
   }
 
   if (c.getOrElse(DefCon).debugInstMem) {
@@ -47,6 +50,7 @@ class InstMem(implicit c: Option[Config] = None) extends Module {
   }
 }
 
-object InstMem extends App {
+object InstMem1 extends App {
+  implicit val c = Some(new Config(inputInst = true))
   (new ChiselStage).emitVerilog(new InstMem)
 }
