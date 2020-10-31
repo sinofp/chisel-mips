@@ -36,6 +36,5 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
 }
 
 object Fetch extends App {
-//  implicit val conf = Some(new Config(inputInst = true, debugInstMem = true))
   (new ChiselStage).emitVerilog(new Fetch)
 }

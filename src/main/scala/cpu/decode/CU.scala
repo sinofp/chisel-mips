@@ -5,12 +5,12 @@ package cpu.decode
 import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util._
+import cpu.decode.Instructions._
 import cpu.execute.ALU._
-import Instructions._
 import cpu.util.{Config, DefCon}
 
+// @formatter:off
 object CtrlSigDef {
-  // @formatter:off
   // Br
   val SZ_BR_TYPE = 3.W
   val BR_TYPE_EQ = 1.U(SZ_BR_TYPE)
@@ -19,13 +19,6 @@ object CtrlSigDef {
   val BR_TYPE_GT = 4.U(SZ_BR_TYPE)
   val BR_TYPE_LE = 5.U(SZ_BR_TYPE)
   val BR_TYPE_LT = 6.U(SZ_BR_TYPE)
-
-  def isBeq = (x: UInt) => x === BR_TYPE_EQ
-  def isBne = (x: UInt) => x === BR_TYPE_NE
-  def isBgez = (x: UInt) => x === BR_TYPE_GE
-  def isBgtz = (x: UInt) => x === BR_TYPE_GT
-  def isBlez = (x: UInt) => x === BR_TYPE_LE
-  def isBltz = (x: UInt) => x === BR_TYPE_LT
 
   // Mem
   val SZ_MEM_TYPE = 2.W
@@ -65,8 +58,8 @@ object CtrlSigDef {
   val X = 0.U
   val XX = 0.U(2.W)
   val XXX = 0.U(3.W)
-  // @formatter:on
 }
+// @formatter:on
 
 import cpu.decode.CtrlSigDef._
 
@@ -94,12 +87,13 @@ class CU(implicit c: Config = DefCon) extends MultiIOModule {
 
   val out = Wire(UInt(outW))
 
-  private def is(bp: BitPat) = inst === bp
-
-  out := MuxCase(0.U(outW), Array(
-    is(ADD) -> Cat(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
-    is(ADDI) -> Cat(SEL_ALU1_RS, SEL_ALU2_IMM, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
-  ))
+  out := {
+    val is = (bp: BitPat) => inst === bp
+    MuxCase(0.U(outW), Array(
+      is(ADD) -> Cat(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
+      is(ADDI) -> Cat(SEL_ALU1_RS, SEL_ALU2_IMM, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
+    ))
+  }
 
   ctrl <> out.asTypeOf(new CtrlSigs)
 }

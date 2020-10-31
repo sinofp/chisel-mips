@@ -20,10 +20,10 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   val memory = Module(new Memory)
   val writeback = Module(new WriteBack)
 
-//  fetch.ef <> execute.ef
+  //  fetch.ef <> execute.ef
   locally {
-    import fetch.ef._
     import execute.ef._
+    import fetch.ef._
     pc_jump := br_addr
     jump := branch // todo J
     junk_output := branch
