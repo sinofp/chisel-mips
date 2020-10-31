@@ -16,7 +16,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "20090000", // addi $t1, $0, 0
       "01095020", // add $t2, $t0, $t1
     ).map("h" + _).map(_.U)
-    implicit val c: Config = new Config(insts = insts, debugRegFile = true)
+    implicit val c: Config = Config(insts = insts, debugRegFile = true)
     test(new Top) { c =>
       // todo 看看RegFile的内容对不对
       c.clock.step(10)

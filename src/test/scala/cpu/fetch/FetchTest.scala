@@ -16,7 +16,7 @@ class FetchTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "20090000", // addi $t1, $0, 0
       "01095020", // add $t2, $t0, $t1
     ).map("h" + _).map(_.U)
-    implicit val c: Config = new Config(insts = insts)
+    implicit val c: Config = Config(insts = insts)
     test(new Fetch) { c =>
       insts.foreach({ inst =>
         c.fd.inst.expect(inst)
@@ -26,7 +26,7 @@ class FetchTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "increase PC" in {
-    implicit val conf: Config = new Config(debugFetch = true)
+    implicit val conf: Config = Config(debugFetch = true)
     test(new Fetch) { c =>
       for (x <- 1 to 10) {
         c.fd.pcp4.expect((x * 4).U)
