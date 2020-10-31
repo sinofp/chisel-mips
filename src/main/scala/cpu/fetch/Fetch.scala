@@ -7,8 +7,8 @@ import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
 import cpu.util.{Config, DefCon}
 
-class Fetch(implicit c: Option[Config] = None) extends MultiIOModule {
-  val debug = c.getOrElse(DefCon).debugFetch
+class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
+  val debug = c.debugFetch
   val ef = IO(new Bundle() {
     val pc_jump = Input(UInt(32.W))
     val jump = Input(Bool())

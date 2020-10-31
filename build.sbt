@@ -53,3 +53,5 @@ libraryDependencies ++= defaultVersions.map { case (dep, ver) =>
 scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
 
 javacOptions ++= javacOptionsVersion(scalaVersion.value)
+
+mainClass in (Compile, run) := Some("cpu.Top")

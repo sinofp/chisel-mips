@@ -7,7 +7,7 @@ import chisel3.stage.ChiselStage
 import chisel3.util._
 import cpu.execute.ALU._
 import Instructions._
-import cpu.util.Config
+import cpu.util.{Config, DefCon}
 
 object CtrlSigDef {
   // @formatter:off
@@ -86,7 +86,7 @@ class CtrlSigs extends Bundle {
   // todo ...?
 }
 
-class CU(implicit c: Option[Config] = None) extends MultiIOModule {
+class CU(implicit c: Config = DefCon) extends MultiIOModule {
   val inst = IO(Input(UInt(32.W)))
   val ctrl = IO(Output(new CtrlSigs))
 

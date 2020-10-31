@@ -8,14 +8,12 @@ import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU._
 import org.scalatest._
 
-import scala.math.pow
-
 class ExecuteTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "Execute"
 
   it should "capable to sub" in {
     test(new Execute) { c =>
-      val testValues = for { x <- 10 to 20; y <- 0 to 10 } yield (x, y)
+      val testValues = for {x <- 10 to 20; y <- 0 to 10} yield (x, y)
 
       import c._
       testValues.foreach { case (x, y) =>

@@ -4,8 +4,8 @@ package cpu.memory
 
 import chisel3._
 import chiseltest._
-import org.scalatest._
 import cpu.decode.CtrlSigDef._
+import org.scalatest._
 
 class MemoryTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "Memory"

@@ -4,9 +4,9 @@ package cpu.memory
 
 import chisel3._
 import cpu.decode.CtrlSigDef.{SZ_MEM_TYPE, SZ_SEL_REG_WDATA}
-import cpu.util.Config
+import cpu.util.{Config, DefCon}
 
-class Memory(implicit c: Option[Config] = None) extends MultiIOModule {
+class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val em = IO(new Bundle() {
     val mem_wen = Input(Bool())
     val mem_wdata = Input(UInt(32.W))

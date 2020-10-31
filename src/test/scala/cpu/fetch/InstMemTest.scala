@@ -13,16 +13,16 @@ class InstMemTest extends FlatSpec with ChiselScalatestTester with Matchers {
   it should "be able to write inst rom" in {
     val last = 10
     val insts = (0 to last).map(_.U)
-    implicit val conf: Option[Config] = Some(new Config(insts = insts, debugInstMem = true))
+    implicit val conf: Config = new Config(insts = insts, debugInstMem = true)
     test(new InstMem) { c =>
       import c.io._
       for (x <- 1 to last) {
-        pc.poke((x*4).U)
+        pc.poke((x * 4).U)
         c.clock.step(1)
         inst.expect(x.U)
-        pc.poke(((x-1)*4).U)
+        pc.poke(((x - 1) * 4).U)
         c.clock.step(1)
-        inst.expect((x-1).U)
+        inst.expect((x - 1).U)
       }
     }
   }

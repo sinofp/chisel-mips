@@ -6,17 +6,17 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import cpu.util.{Config, DefCon}
 
-class InstMem(implicit c: Option[Config] = None) extends MultiIOModule {
+class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
   val io = IO(new Bundle() {
     val pc = Input(UInt(32.W))
     val inst = Output(UInt(32.W))
   })
 
-  val mem = VecInit(c.getOrElse(DefCon).insts)
+  val mem = VecInit(c.insts)
 
   io.inst := mem(io.pc / 4.U)
 
-  if (c.getOrElse(DefCon).debugInstMem) {
+  if (c.debugInstMem) {
     printf(p"[log InstMem]\n" +
       p"\tinst 1 = ${Hexadecimal(mem(0.U))}\n" +
       p"\tinst 2 = ${Hexadecimal(mem(1.U))}\n" +

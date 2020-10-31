@@ -6,16 +6,11 @@ import chisel3._
 import chiseltest._
 import cpu.decode.CtrlSigDef._
 import org.scalatest._
-import chiseltest.experimental.TestOptionBuilder._
-import chiseltest.internal.VerilatorBackendAnnotation
-
-import scala.math.pow
 
 class BrUnitTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "BrUnit"
 
   it should "compare with zero as signed" in {
-    // test(new BrUnit).withAnnotations(Seq(VerilatorBackendAnnotation)) { c =>
     test(new BrUnit) { c =>
       // 0, 1, -1, -2
       // 负数的话，用scala的Int转UInt有问题

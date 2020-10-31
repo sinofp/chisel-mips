@@ -5,7 +5,7 @@ package cpu.fetch
 import chisel3._
 import cpu.util.{Config, DefCon}
 
-class PC(implicit c: Option[Config] = None) extends Module {
+class PC(implicit c: Config = DefCon) extends Module {
   val io = IO(new Bundle() {
     val pc_next = Input(UInt(32.W))
     val pc_now = Output(UInt(32.W))

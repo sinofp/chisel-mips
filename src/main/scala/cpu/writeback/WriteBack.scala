@@ -6,9 +6,9 @@ import chisel3._
 import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.util.Config
+import cpu.util.{Config, DefCon}
 
-class WriteBack(implicit c: Option[Config] = None) extends MultiIOModule {
+class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val mw = IO(new Bundle() {
     val pc = Input(UInt(32.W))
     val reg_wen = Input(Bool())

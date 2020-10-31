@@ -4,9 +4,9 @@ package cpu.writeback
 
 import chisel3._
 import chisel3.stage.ChiselStage
-import cpu.util.Config
+import cpu.util.{Config, DefCon}
 
-class HILO(implicit c: Option[Config] = None) extends Module {
+class HILO(implicit c: Config = DefCon) extends Module {
   val io = IO(new Bundle() {
     val wen = Input(Bool())
     val _hi = Input(UInt(32.W))

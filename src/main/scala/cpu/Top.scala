@@ -11,7 +11,7 @@ import cpu.memory.Memory
 import cpu.util.{Config, DefCon}
 import cpu.writeback.WriteBack
 
-class Top(implicit c: Option[Config] = None) extends MultiIOModule {
+class Top(implicit c: Config = DefCon) extends MultiIOModule {
   val junk_output = IO(Output(Bool())) // 随便加个输出，防止优化成空电路
 
   val fetch = Module(new Fetch)
