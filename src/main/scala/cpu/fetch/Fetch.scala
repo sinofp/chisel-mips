@@ -19,12 +19,9 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
     val inst = Output(UInt(32.W))
   })
 
-  val pc_now = Wire(UInt(32.W))
+  val pc_next = MuxCase(fd.pcp4, Array(/*stall -> pc_now, */ ef.jump -> ef.pc_jump))
+  val pc_now = RegNext(pc_next, 0.U)
   fd.pcp4 := pc_now + 4.U
-
-  val pc = Module(new PC())
-  pc_now := pc.io.pc_now
-  pc.io.pc_next := MuxCase(fd.pcp4, Array(/*stall -> pc_now, */ ef.jump -> ef.pc_jump))
 
   val inst_mem = Module(new InstMem())
   inst_mem.io.pc := pc_now

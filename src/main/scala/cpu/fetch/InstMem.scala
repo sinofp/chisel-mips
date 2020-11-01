@@ -26,6 +26,6 @@ class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
   }
 }
 
-object InstMem1 extends App {
+object InstMem extends App {
   (new ChiselStage).emitVerilog(new InstMem)
 }

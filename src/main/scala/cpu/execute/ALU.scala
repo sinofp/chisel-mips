@@ -6,7 +6,7 @@ package cpu.execute
 
 import Chisel._
 import chisel3.stage.ChiselStage
-import cpu.util.Config
+import cpu.util.{Config, DefCon}
 
 object ALU {
   // @formatter:off
@@ -45,7 +45,7 @@ object ALU {
 
 import cpu.execute.ALU._
 
-class ALU(implicit c: Option[Config] = None) extends Module {
+class ALU(implicit c: Config = DefCon) extends Module {
   val xLen = 32
   val io = new Bundle {
     val fn = Bits(INPUT, SZ_ALU_FN)

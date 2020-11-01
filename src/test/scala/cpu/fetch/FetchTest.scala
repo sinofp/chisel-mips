@@ -32,7 +32,7 @@ class FetchTest extends FlatSpec with ChiselScalatestTester with Matchers {
         c.fd.pcp4.expect((x * 4).U)
         c.clock.step(1)
       }
-      c.reset.poke(true.B) // 让PC的pc_now归零
+      c.reset.poke(true.B) // 让pc_now归零
       c.clock.step(1)
       c.reset.poke(false.B)
       for (x <- 1 to 10) {

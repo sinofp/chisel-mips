@@ -8,7 +8,7 @@ import cpu.decode.CtrlSigDef.{SZ_BR_TYPE, SZ_MEM_TYPE, SZ_SEL_REG_WDATA}
 import cpu.execute.ALU.SZ_ALU_FN
 import cpu.util.{Config, DefCon}
 
-class Execute(implicit c: Option[Config] = None) extends MultiIOModule {
+class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val de = IO(new Bundle() {
     val pc = Input(UInt(32.W))
     val alu_fn = Input(UInt(SZ_ALU_FN))
@@ -68,7 +68,7 @@ class Execute(implicit c: Option[Config] = None) extends MultiIOModule {
   val adder_out = Wire(UInt(32.W))
   adder_out := alu.io.adder_out
 
-  if (c.getOrElse(DefCon).debugExecute) {
+  if (c.debugExecute) {
     printf(p"[log execute] in1 = ${Binary(de.num1)}, in2 = ${Binary(de.num2)}, adder_out = ${Binary(adder_out)}\n")
   }
 
