@@ -3,38 +3,15 @@
 package cpu.decode
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
-import cpu.execute.ALU.SZ_ALU_FN
+import cpu.port.{DEPort, FDPort, WDPort}
 import cpu.util.{Config, DefCon}
 
 class Decode(implicit c: Config = DefCon) extends MultiIOModule {
-  val fd = IO(new Bundle() {
-    val inst = Input(UInt(32.W))
-    val pcp4 = Input(UInt(32.W))
-  })
-  val wd = IO(new Bundle() {
-    val wen = Input(Bool())
-    val waddr = Input(UInt(5.W))
-    val wdata = Input(UInt(32.W))
-  })
-  val de = IO(new Bundle() {
-    val alu_fn = Output(UInt(SZ_ALU_FN))
-    val mul = Output(Bool())
-    val div = Output(Bool())
-    val mem_wen = Output(Bool())
-    val reg_wen = Output(Bool()) // link包含于其中
-    val sel_reg_wdata = Output(UInt(SZ_SEL_REG_WDATA))
-    val br_type = Output(UInt(SZ_BR_TYPE))
-    val num1 = Output(UInt(32.W))
-    val num2 = Output(UInt(32.W))
-    val reg_waddr = Output(UInt(5.W))
-    val pc = Output(UInt(32.W))
-    val br_addr = Output(UInt(32.W))
-    val mem_wdata = Output(UInt(32.W))
-    val mem_size = Output(UInt(SZ_MEM_TYPE))
-  })
+  val fd = IO(Input(new FDPort))
+  val wd = IO(Input(new WDPort))
+  val de = IO(Output(new DEPort))
 
   val inst = RegNext(fd.inst, 0.U(32.W))
   val pcp4 = RegNext(fd.pcp4, 0.U)
@@ -104,8 +81,4 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
       reg_waddr_is(SEL_REG_WADDR_RT) -> rt,
     ))
   }
-}
-
-object Decode extends App {
-  (new ChiselStage).emitVerilog(new Decode)
 }

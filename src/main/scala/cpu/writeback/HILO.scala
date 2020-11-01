@@ -3,7 +3,6 @@
 package cpu.writeback
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import cpu.util.{Config, DefCon}
 
 class HILO(implicit c: Config = DefCon) extends Module {
@@ -24,8 +23,4 @@ class HILO(implicit c: Config = DefCon) extends Module {
     hi := _hi
     lo := _lo
   }
-}
-
-object HILO extends App {
-  (new ChiselStage).emitVerilog(new HILO)
 }

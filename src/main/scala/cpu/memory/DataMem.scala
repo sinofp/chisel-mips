@@ -3,7 +3,6 @@
 package cpu.memory
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
 import cpu.util.{Config, DefCon}
@@ -39,8 +38,4 @@ class DataMem(implicit c: Config = DefCon) extends Module {
     printf(p"[log DataMem] wen = $wen, addr = ${Binary(addr)}, wdata = ${Binary(wdata)}, " +
       p"size = ${Binary(size)}, rdata_word = ${Binary(rdata_word)},  rdata = ${Binary(rdata)}\n")
   }
-}
-
-object DataMem extends App {
-  new ChiselStage emitVerilog new DataMem
 }

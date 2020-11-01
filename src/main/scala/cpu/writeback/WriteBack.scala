@@ -3,25 +3,14 @@
 package cpu.writeback
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
+import cpu.port.{MWPort, WDPort}
 import cpu.util.{Config, DefCon}
 
 class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
-  val mw = IO(new Bundle() {
-    val pc = Input(UInt(32.W))
-    val reg_wen = Input(Bool())
-    val sel_reg_wdata = Input(UInt(SZ_SEL_REG_WDATA))
-    val reg_waddr = Input(UInt(5.W))
-    val mem_rdata = Input(UInt(32.W))
-    val alu_out = Input(UInt(32.W))
-  })
-  val wd = IO(new Bundle() {
-    val wen = Output(Bool())
-    val waddr = Output(UInt(5.W))
-    val wdata = Output(UInt(32.W))
-  })
+  val mw = IO(Input(new MWPort))
+  val wd = IO(Output(new WDPort))
 
   val pc = RegNext(mw.pc) // for trace & pc + 8
   val sel_reg_wdata = RegNext(mw.sel_reg_wdata)
@@ -47,8 +36,4 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     hi := DontCare
     lo := DontCare
   }
-}
-
-object WriteBack extends App {
-  new ChiselStage emitVerilog new WriteBack
 }

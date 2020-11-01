@@ -3,7 +3,6 @@
 package cpu.decode
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util._
 import cpu.decode.Instructions._
 import cpu.execute.ALU._
@@ -27,29 +26,28 @@ object CtrlSigDef {
   val MEM_BYTE = 2.U(SZ_MEM_TYPE)
 
   // Select
-  // todo SIZE
   val SZ_SEL_ALU1 = 2.W
-  val SZ_SEL_ALU2 = 2.W
-  val SZ_SEL_IMM = 3.W
-  val SZ_SEL_REG_WADDR = 2.W
-  val SZ_SEL_REG_WDATA = 2.W
-
   val SEL_ALU1_SA = 0.U(SZ_SEL_ALU1) // todo 没别的就改成Bool()
   val SEL_ALU1_RS = 1.U(SZ_SEL_ALU1)
+
+  val SZ_SEL_ALU2 = 2.W
   val SEL_ALU2_IMM = 0.U(SZ_SEL_ALU2)
   val SEL_ALU2_RT = 1.U(SZ_SEL_ALU2)
   val SEL_ALU2_ZERO = 2.U(SZ_SEL_ALU2)
 
+  val SZ_SEL_IMM = 3.W
   val SEL_IMM_U = 0.U(SZ_SEL_IMM)
   val SEL_IMM_S = 1.U(SZ_SEL_IMM)
   val SEL_IMM_B = 2.U(SZ_SEL_IMM) // USB!
   val SEL_IMM_J = 3.U(SZ_SEL_IMM)
   val SEL_IMM_SH = 4.U(SZ_SEL_IMM)
 
+  val SZ_SEL_REG_WADDR = 2.W
   val SEL_REG_WADDR_RD = 0.U(SZ_SEL_REG_WADDR)
   val SEL_REG_WADDR_RT = 1.U(SZ_SEL_REG_WADDR)
   val SEL_REG_WADDR_31 = 2.U(SZ_SEL_REG_WADDR)
 
+  val SZ_SEL_REG_WDATA = 2.W
   val SEL_REG_WDATA_ALU = 0.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_MEM = 1.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_LNK = 2.U(SZ_SEL_REG_WDATA)
@@ -96,8 +94,4 @@ class CU(implicit c: Config = DefCon) extends MultiIOModule {
   }
 
   ctrl <> out.asTypeOf(new CtrlSigs)
-}
-
-object CU extends App {
-  (new ChiselStage).emitVerilog(new CU)
 }

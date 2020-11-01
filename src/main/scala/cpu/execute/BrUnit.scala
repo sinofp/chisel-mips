@@ -3,7 +3,6 @@
 package cpu.execute
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
 import cpu.util.{Config, DefCon}
@@ -31,8 +30,4 @@ class BrUnit(implicit c: Config = DefCon) extends Module {
       is(BR_TYPE_LT) -> (!isPos && isNotZero),
     ))
   }
-}
-
-object BrUnit extends App {
-  (new ChiselStage).emitVerilog(new BrUnit)
 }

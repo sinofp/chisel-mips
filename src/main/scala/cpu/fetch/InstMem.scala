@@ -3,7 +3,6 @@
 package cpu.fetch
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import cpu.util.{Config, DefCon}
 
 class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
@@ -24,8 +23,4 @@ class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
       p"\tinst 4 = ${Hexadecimal(mem(3.U))}\n" +
       p"\tinst 5 = ${Hexadecimal(mem(4.U))}\n")
   }
-}
-
-object InstMem extends App {
-  (new ChiselStage).emitVerilog(new InstMem)
 }

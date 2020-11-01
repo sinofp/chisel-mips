@@ -3,28 +3,12 @@
 package cpu.memory
 
 import chisel3._
-import cpu.decode.CtrlSigDef.{SZ_MEM_TYPE, SZ_SEL_REG_WDATA}
+import cpu.port.{EMPort, MWPort}
 import cpu.util.{Config, DefCon}
 
 class Memory(implicit c: Config = DefCon) extends MultiIOModule {
-  val em = IO(new Bundle() {
-    val mem_wen = Input(Bool())
-    val mem_wdata = Input(UInt(32.W))
-    val mem_size = Input(UInt(SZ_MEM_TYPE))
-    val reg_wen = Input(Bool())
-    val sel_reg_wdata = Input(UInt(SZ_SEL_REG_WDATA))
-    val reg_waddr = Input(UInt(5.W))
-    val alu_out = Input(UInt(32.W))
-    val pc = Input(UInt(32.W))
-  })
-  val mw = IO(new Bundle() {
-    val pc = Output(UInt(32.W))
-    val reg_wen = Output(Bool())
-    val sel_reg_wdata = Output(UInt(SZ_SEL_REG_WDATA))
-    val reg_waddr = Output(UInt(5.W))
-    val mem_rdata = Output(UInt(32.W))
-    val alu_out = Output(UInt(32.W))
-  })
+  val em = IO(Input(new EMPort))
+  val mw = IO(Output(new MWPort))
 
   mw.pc := RegNext(em.pc)
   mw.reg_wen := RegNext(em.reg_wen, 0.U)

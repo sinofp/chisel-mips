@@ -3,8 +3,8 @@
 package cpu.fetch
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util.MuxCase
+import cpu.port.FDPort
 import cpu.util.{Config, DefCon}
 
 class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
@@ -13,13 +13,9 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
     val pc_jump = Input(UInt(32.W))
     val jump = Input(Bool())
   })
-  val fd = IO(new Bundle() {
-    //    val stall = Input(Bool())
-    val pcp4 = Output(UInt(32.W))
-    val inst = Output(UInt(32.W))
-  })
+  val fd = IO(Output(new FDPort))
 
-  val pc_next = MuxCase(fd.pcp4, Array(/*stall -> pc_now, */ ef.jump -> ef.pc_jump))
+  val pc_next = MuxCase(fd.pcp4, Array(ef.jump -> ef.pc_jump))
   val pc_now = RegNext(pc_next, 0.U)
   fd.pcp4 := pc_now + 4.U
 
@@ -30,8 +26,4 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
   if (debug) {
     printf(p"[log Fetch] pc_now = $pc_now, pcp4 = ${fd.pcp4}\n")
   }
-}
-
-object Fetch extends App {
-  (new ChiselStage).emitVerilog(new Fetch)
 }

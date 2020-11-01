@@ -3,7 +3,6 @@
 package cpu.decode
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import cpu.util.{Config, DefCon}
 
 class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends Module {
@@ -44,8 +43,4 @@ class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends Module {
         p"\t$$t9 = ${Hexadecimal(reg(25.U))}\n")
     }
   }
-}
-
-object RegFile extends App {
-  (new ChiselStage).emitVerilog(new RegFile(2))
 }

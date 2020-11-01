@@ -5,7 +5,6 @@
 package cpu.execute
 
 import Chisel._
-import chisel3.stage.ChiselStage
 import cpu.util.{Config, DefCon}
 
 object ALU {
@@ -82,8 +81,4 @@ class ALU(implicit c: Config = DefCon) extends Module {
   val out = Mux(io.fn === FN_ADD || io.fn === FN_SUB, io.adder_out, shift_logic)
 
   io.out := out
-}
-
-object ALU1 extends App {
-  (new ChiselStage).emitVerilog(new ALU)
 }
