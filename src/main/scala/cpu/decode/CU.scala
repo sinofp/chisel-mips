@@ -25,6 +25,13 @@ object CtrlSigDef {
   val MEM_HALF = 1.U(SZ_MEM_TYPE)
   val MEM_BYTE = 2.U(SZ_MEM_TYPE)
 
+  // Forward
+  val SZ_FORWARD = 2.W
+  val FORWARD_DEF = 0.U(SZ_FORWARD)
+  val FORWARD_EXE = 1.U(SZ_FORWARD)
+  val FORWARD_MEM = 2.U(SZ_FORWARD)
+  val FORWARD_WB = 3.U(SZ_FORWARD)
+
   // Select
   val SZ_SEL_ALU1 = 2.W
   val SEL_ALU1_SA = 0.U(SZ_SEL_ALU1) // todo 没别的就改成Bool()

@@ -3,7 +3,7 @@
 package cpu.execute
 
 import chisel3._
-import cpu.port.{DEPort, EMPort}
+import cpu.port.{DEPort, EMPort, WritePort}
 import cpu.util.{Config, DefCon}
 
 class Execute(implicit c: Config = DefCon) extends MultiIOModule {
@@ -13,6 +13,11 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     val branch = Output(Bool())
     val br_addr = Output(UInt(32.W))
   })
+  // forward
+  val ed = IO(Output(new WritePort))
+  ed.wen := em.reg_wen
+  ed.waddr := em.reg_waddr
+  ed.wdata := em.alu_out
 
   val mul = RegNext(de.mul)
   val div = RegNext(de.div)

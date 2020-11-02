@@ -3,12 +3,17 @@
 package cpu.memory
 
 import chisel3._
-import cpu.port.{EMPort, MWPort}
+import cpu.port.{EMPort, MWPort, WritePort}
 import cpu.util.{Config, DefCon}
 
 class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val em = IO(Input(new EMPort))
   val mw = IO(Output(new MWPort))
+  // forward
+  val md = IO(Output(new WritePort))
+  md.wen := mw.reg_wen
+  md.waddr := mw.reg_waddr
+  md.wdata := mw.mem_rdata
 
   mw.pc := RegNext(em.pc)
   mw.reg_wen := RegNext(em.reg_wen, 0.U)

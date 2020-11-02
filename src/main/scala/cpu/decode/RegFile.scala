@@ -3,20 +3,20 @@
 package cpu.decode
 
 import chisel3._
+import cpu.port.WritePort
 import cpu.util.{Config, DefCon}
 
-class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends Module {
+class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {
   require(readPorts >= 0)
+  val in = IO(Input(new WritePort))
   val io = IO(new Bundle() {
-    val wen = Input(Bool())
-    val waddr = Input(UInt(5.W))
-    val wdata = Input(UInt(32.W))
     val raddr = Input(Vec(readPorts, UInt(5.W)))
     val rdata = Output(Vec(readPorts, UInt(32.W)))
   })
 
   val reg = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
 
+  import in._
   import io._
 
   when(wen) {

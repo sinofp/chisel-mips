@@ -30,6 +30,8 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   }
   decode.fd <> fetch.fd
   decode.wd <> writeback.wd
+  decode.ed <> execute.ed
+  decode.md <> memory.md
   execute.de <> decode.de
   memory.em <> execute.em
   writeback.mw <> memory.mw

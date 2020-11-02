@@ -5,12 +5,12 @@ package cpu.writeback
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.port.{MWPort, WDPort}
+import cpu.port.{MWPort, WritePort}
 import cpu.util.{Config, DefCon}
 
 class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val mw = IO(Input(new MWPort))
-  val wd = IO(Output(new WDPort))
+  val wd = IO(Output(new WritePort))
 
   val pc = RegNext(mw.pc) // for trace & pc + 8
   val sel_reg_wdata = RegNext(mw.sel_reg_wdata)
