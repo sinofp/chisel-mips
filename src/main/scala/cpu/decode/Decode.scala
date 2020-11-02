@@ -87,7 +87,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   }
 
   de.br_addr := pcp4 + imm_ext
-  de.pc := pcp4 - 4.U
+  de.pcp8 := pcp4 + 4.U // for link
   locally {
     val alu_is = (no: Int, sel: UInt) => sel === (if (no == 1) sel_alu1 else sel_alu2)
     de.num1 := Mux(alu_is(1, SEL_ALU1_SA), imm_ext, rdata1)

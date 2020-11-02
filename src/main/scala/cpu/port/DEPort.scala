@@ -7,7 +7,7 @@ import cpu.decode.CtrlSigDef.{SZ_BR_TYPE, SZ_MEM_TYPE, SZ_SEL_REG_WDATA}
 import cpu.execute.ALU.SZ_ALU_FN
 
 class DEPort extends Bundle {
-  val pc = UInt(32.W)
+  val pcp8 = UInt(32.W)
   val alu_fn = UInt(SZ_ALU_FN)
   val mul = Bool()
   val div = Bool()

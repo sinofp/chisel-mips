@@ -3,6 +3,8 @@
 package cpu.memory
 
 import chisel3._
+import chisel3.util.MuxCase
+import cpu.decode.CtrlSigDef._
 import cpu.port.{EMPort, MWPort, WritePort}
 import cpu.util.{Config, DefCon}
 
@@ -13,9 +15,13 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val md = IO(Output(new WritePort))
   md.wen := mw.reg_wen
   md.waddr := mw.reg_waddr
-  md.wdata := mw.mem_rdata
+  md.wdata := MuxCase(0.U, Array(
+    (mw.sel_reg_wdata === SEL_REG_WDATA_ALU) -> mw.alu_out,
+    (mw.sel_reg_wdata === SEL_REG_WDATA_LNK) -> mw.pcp8,
+    (mw.sel_reg_wdata === SEL_REG_WDATA_MEM) -> mw.mem_rdata,
+  ))
 
-  mw.pc := RegNext(em.pc)
+  mw.pcp8 := RegNext(em.pcp8)
   mw.reg_wen := RegNext(em.reg_wen, 0.U)
   mw.sel_reg_wdata := RegNext(em.sel_reg_wdata)
   mw.reg_waddr := RegNext(em.reg_waddr)

@@ -12,7 +12,8 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val mw = IO(Input(new MWPort))
   val wd = IO(Output(new WritePort))
 
-  val pc = RegNext(mw.pc) // for trace & pc + 8
+  val pcp8 = RegNext(mw.pcp8 - 8.U)
+  val pc = pcp8 - 8.U
   val sel_reg_wdata = RegNext(mw.sel_reg_wdata)
   val mem_rdata = RegNext(mw.mem_rdata)
   val alu_out = RegNext(mw.alu_out)
@@ -24,7 +25,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     val from = sel => sel_reg_wdata === sel
     MuxCase(0.U, Array(
       from(SEL_REG_WDATA_ALU) -> alu_out,
-      from(SEL_REG_WDATA_LNK) -> (pc + 8.U), // 这个+8不知放哪好
+      from(SEL_REG_WDATA_LNK) -> pcp8,
       from(SEL_REG_WDATA_MEM) -> mem_rdata,
     ))
   }

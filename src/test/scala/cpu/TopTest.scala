@@ -19,7 +19,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
     implicit val c: Config = Config(insts = insts, debugRegFile = true)
     test(new Top) { c =>
       // todo 看看RegFile的内容对不对
-      c.clock.step(10)
+      c.clock.step(7)
     }
   }
 }
