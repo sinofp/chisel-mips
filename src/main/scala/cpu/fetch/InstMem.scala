@@ -11,7 +11,7 @@ class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
     val inst = Output(UInt(32.W))
   })
 
-  val mem = VecInit(c.insts)
+  val mem = VecInit(c.insts ++ Seq.fill(32 - c.insts.length)(0.U(32.W)))
 
   io.inst := mem(io.pc / 4.U)
 

@@ -22,8 +22,9 @@ class BrUnit(implicit c: Config = DefCon) extends Module {
 
   io.branch := {
     val is = (tpe: UInt) => io.br_type === tpe
-    MuxCase(!isNotZero, Array(
+    MuxCase(false.B, Array(
       is(BR_TYPE_EQ) -> isNotZero,
+      is(BR_TYPE_NE) -> !isNotZero,
       is(BR_TYPE_GE) -> isPos,
       is(BR_TYPE_GT) -> (isPos && isNotZero),
       is(BR_TYPE_LT) -> (!isPos),

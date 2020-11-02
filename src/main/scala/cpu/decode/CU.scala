@@ -6,12 +6,13 @@ import chisel3._
 import chisel3.util._
 import cpu.decode.Instructions._
 import cpu.execute.ALU._
-import cpu.util.{Config, DefCon}
+import cpu.util._
 
 // @formatter:off
 object CtrlSigDef {
   // Br
   val SZ_BR_TYPE = 3.W
+  val BR_TYPE_NO = 0.U(SZ_BR_TYPE)
   val BR_TYPE_EQ = 1.U(SZ_BR_TYPE)
   val BR_TYPE_NE = 2.U(SZ_BR_TYPE)
   val BR_TYPE_GE = 3.U(SZ_BR_TYPE)
@@ -59,10 +60,9 @@ object CtrlSigDef {
   val SEL_REG_WDATA_MEM = 1.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_LNK = 2.U(SZ_SEL_REG_WDATA)
 
-  // 也许应该用BitPat?
-  val X = 0.U
-  val XX = 0.U(2.W)
-  val XXX = 0.U(3.W)
+  val X = BitPat(0.U)
+  val XX = BitPat(0.U(2.W))
+  val XXX = BitPat(0.U(3.W))
 }
 // @formatter:on
 
@@ -82,23 +82,29 @@ class CtrlSigs extends Bundle {
   val br_type = UInt(SZ_BR_TYPE)
   val mem_size = UInt(SZ_MEM_TYPE)
   // todo ...?
+
+  implicit def uint2BitPat(x: UInt): BitPat = BitPat(x)
+
+  private val default: List[BitPat] = List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_X, 0.U, 0.U,
+    0.U, 0.U, XX, XX, XXX, MEM_WORD)
+
+  private val table: Array[(BitPat, List[BitPat])] = Array(
+    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
+    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
+  )
+
+  def decode(inst: UInt): this.type = {
+    val decoder = DecodeLogic(inst, default, table)
+    val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, mul, div, mem_wen,
+      reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size)
+    sigs zip decoder foreach { case (s, d) => s := d }
+    this
+  }
 }
 
 class CU(implicit c: Config = DefCon) extends MultiIOModule {
   val inst = IO(Input(UInt(32.W)))
   val ctrl = IO(Output(new CtrlSigs))
 
-  val outW = ctrl.getWidth.W
-
-  val out = Wire(UInt(outW))
-
-  out := {
-    val is = (bp: BitPat) => inst === bp
-    MuxCase(0.U(outW), Array(
-      is(ADD) -> Cat(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
-      is(ADDI) -> Cat(SEL_ALU1_RS, SEL_ALU2_IMM, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
-    ))
-  }
-
-  ctrl <> out.asTypeOf(new CtrlSigs)
+  ctrl := Wire(new CtrlSigs).decode(inst)
 }
