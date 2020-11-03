@@ -3,6 +3,6 @@
 package cpu.port.hazard
 
 import chisel3._
-import cpu.port.{Flush, Stall}
+import cpu.port.Stall
 
-class FHPort extends Bundle with Stall with Flush
+class FHPort extends Bundle with Stall

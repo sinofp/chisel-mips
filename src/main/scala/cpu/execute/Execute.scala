@@ -17,7 +17,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     val br_addr = Output(UInt(32.W))
   })
   // forward
-  val he = IO(Flipped(new EHPort)) // todo flush
+  val he = IO(Flipped(new EHPort))
   he.wen := em.reg_wen
   he.waddr := em.reg_waddr
   val ed = IO(Output(new WdataPort))
@@ -31,11 +31,11 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val alu_fn = RegNext(de.alu_fn)
   val num1 = RegNext(de.num1)
   val num2 = RegNext(de.num2)
-  val br_t = RegNext(de.br_type)
+  val br_t = RegNext(Mux(he.flush, BR_TYPE_NO,de.br_type))
 
   em.pcp8 := RegNext(de.pcp8)
-  em.mem_wen := RegNext(de.mem_wen, 0.U)
-  em.reg_wen := RegNext(de.reg_wen, 0.U)
+  em.mem_wen := RegNext(Mux(he.flush, 0.U, de.mem_wen), 0.U)
+  em.reg_wen := RegNext(Mux(he.flush, 0.U, de.reg_wen), 0.U)
   em.sel_reg_wdata := RegNext(de.sel_reg_wdata, 0.U)
   em.reg_waddr := RegNext(de.reg_waddr, 0.U)
   ef.br_addr := RegNext(de.br_addr)

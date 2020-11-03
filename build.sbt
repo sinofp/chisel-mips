@@ -40,6 +40,7 @@ resolvers ++= Seq(
 )
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+//addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % "3.4.0" cross CrossVersion.full)
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Seq(

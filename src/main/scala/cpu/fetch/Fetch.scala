@@ -15,10 +15,11 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
     val jump = Input(Bool())
   })
   val fd = IO(Output(new FDPort))
-  val hf = IO(Flipped(new FHPort)) // todo stall flush
+  val hf = IO(Flipped(new FHPort))
 
-  val pc_next = MuxCase(fd.pcp4, Array(ef.jump -> ef.pc_jump))
-  val pc_now = RegNext(pc_next, 0.U)
+  val pc_now = Wire(UInt(32.W))
+  val pc_next = MuxCase(fd.pcp4, Array(hf.stall -> pc_now, ef.jump -> ef.pc_jump))
+  pc_now := RegNext(pc_next, 0.U)
   fd.pcp4 := pc_now + 4.U
 
   val inst_mem = Module(new InstMem())

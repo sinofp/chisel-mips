@@ -17,10 +17,12 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val ed = IO(Input(new WdataPort))
   val md = IO(Input(new WdataPort))
   val readPorts = 2
-  val hd = IO(Flipped(new DHPort(readPorts))) // todo flush stall
+  val hd = IO(Flipped(new DHPort(readPorts)))
 
-  val inst = RegNext(fd.inst, 0.U(32.W))
-  val pcp4 = RegNext(fd.pcp4, 0.U)
+  val inst = Wire(UInt(32.W))
+  inst := RegNext(Mux(hd.stall, inst, fd.inst), 0.U(32.W))
+  val pcp4 = Wire(UInt(32.W))
+  pcp4 := RegNext(Mux(hd.stall, pcp4, fd.pcp4), 0.U)
 
   val cu = Module(new CU)
   cu.inst := inst
@@ -59,7 +61,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   // forward
   hd.raddr(0) := rs
   hd.raddr(1) := rt
-  hd.prev_load := RegNext(cu.ctrl.load, false.B)
+  hd.prev_load := RegNext(Mux(hd.stall, false.B, cu.ctrl.load), false.B)
   val forward_reg = (i: Int) => {
     val is = (forward_type: UInt) => hd.forward(i) === forward_type
     MuxCase(reg_file.io.rdata(i), Array(
