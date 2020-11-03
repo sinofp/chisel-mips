@@ -4,12 +4,12 @@ package cpu.decode
 
 import chisel3._
 import chisel3.util.Counter
-import cpu.port.WritePort
+import cpu.port.WDPort
 import cpu.util.{Config, DefCon}
 
 class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {
   require(readPorts >= 0)
-  val in = IO(Input(new WritePort))
+  val in = IO(Input(new WDPort))
   val io = IO(new Bundle() {
     val raddr = Input(Vec(readPorts, UInt(5.W)))
     val rdata = Output(Vec(readPorts, UInt(32.W)))

@@ -5,16 +5,22 @@ package cpu.decode
 import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
-import cpu.port.{DEPort, FDPort, WritePort}
+import cpu.port.{DEPort, FDPort, HDPort, WDPort}
 import cpu.util.{Config, DefCon}
 
 class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val fd = IO(Input(new FDPort))
-  // forward
-  val wd = IO(Input(new WritePort))
-  val ed = IO(Input(new WritePort))
-  val md = IO(Input(new WritePort))
   val de = IO(Output(new DEPort))
+  val wd = IO(Input(new WDPort))
+  // forward
+  val ed = IO(new Bundle() {
+    val wdata = Input(UInt(32.W))
+  })
+  val md = IO(new Bundle() {
+    val wdata = Input(UInt(32.W))
+  })
+  val readPorts = 2
+  val hd = IO(Flipped(new HDPort(readPorts)))
 
   val inst = RegNext(fd.inst, 0.U(32.W))
   val pcp4 = RegNext(fd.pcp4, 0.U)
@@ -42,7 +48,6 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val rd = inst(15, 11)
   val imm = inst(15, 0)
 
-  val readPorts = 2
   val reg_file = Module(new RegFile(readPorts))
   locally {
     import reg_file.in._
@@ -55,16 +60,10 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   }
 
   // forward
-  val hazard_unit = Module(new HazardUnit(readPorts))
-  hazard_unit.raddr(0) := rs
-  hazard_unit.raddr(1) := rt
-  hazard_unit.ed <> ed
-  hazard_unit.md <> md
-  hazard_unit.wd <> wd
-  val forward = hazard_unit.forward
-
+  hd.raddr(0) := rs
+  hd.raddr(1) := rt
   val forward_reg = (i: Int) => {
-    val is = (forward_type: UInt) => forward(i) === forward_type
+    val is = (forward_type: UInt) => hd.forward(i) === forward_type
     MuxCase(reg_file.io.rdata(i), Array(
       is(FORWARD_EXE) -> ed.wdata,
       is(FORWARD_MEM) -> md.wdata,

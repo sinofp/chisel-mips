@@ -19,6 +19,7 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   val execute = Module(new Execute)
   val memory = Module(new Memory)
   val writeback = Module(new WriteBack)
+  val hazard = Module(new HazardUnit(2))
 
   //  fetch.ef <> execute.ef
   locally {
@@ -32,9 +33,13 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   decode.wd <> writeback.wd
   decode.ed <> execute.ed
   decode.md <> memory.md
+  decode.hd <> hazard.hd
   execute.de <> decode.de
   memory.em <> execute.em
   writeback.mw <> memory.mw
+  hazard.eh <> execute.eh
+  hazard.mh <> memory.mh
+  hazard.wh <> writeback.wh
 }
 
 object Top extends App {

@@ -5,7 +5,7 @@ package cpu.execute
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.port.{DEPort, EMPort, WritePort}
+import cpu.port.{DEPort, EMPort, ForwardPort}
 import cpu.util.{Config, DefCon}
 
 class Execute(implicit c: Config = DefCon) extends MultiIOModule {
@@ -16,9 +16,12 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     val br_addr = Output(UInt(32.W))
   })
   // forward
-  val ed = IO(Output(new WritePort))
-  ed.wen := em.reg_wen
-  ed.waddr := em.reg_waddr
+  val eh = IO(Output(new ForwardPort))
+  eh.wen := em.reg_wen
+  eh.waddr := em.reg_waddr
+  val ed = IO(new Bundle() {
+    val wdata = Output(UInt(32.W))
+  })
   ed.wdata := MuxCase(0.U, Array(
     (em.sel_reg_wdata === SEL_REG_WDATA_ALU) -> em.alu_out,
     (em.sel_reg_wdata === SEL_REG_WDATA_LNK) -> em.pcp8

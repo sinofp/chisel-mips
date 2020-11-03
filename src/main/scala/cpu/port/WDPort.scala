@@ -4,8 +4,6 @@ package cpu.port
 
 import chisel3._
 
-class WritePort extends Bundle {
-  val wen = Bool()
-  val waddr = UInt(5.W)
+class WDPort extends ForwardPort {
   val wdata = UInt(32.W)
 }
