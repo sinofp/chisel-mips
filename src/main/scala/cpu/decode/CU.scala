@@ -89,8 +89,10 @@ class CtrlSigs extends Bundle {
     0.U, 0.U, XX, XX, XXX, MEM_WORD)
 
   private val table: Array[(BitPat, List[BitPat])] = Array(
-    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
-    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, false.B, false.B, false.B, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
+    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
+    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
+    SUB -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_SUB, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
+    BLTZ -> List(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B,FN_SUB, 0.U, 0.U, 0.U, 0.U, XX, XX, BR_TYPE_LT, XX)
   )
 
   def decode(inst: UInt): this.type = {

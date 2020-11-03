@@ -86,7 +86,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
     ))
   }
 
-  de.br_addr := pcp4 + imm_ext
+  de.br_addr := pcp4 + imm_ext // 这个是不是应该放在imm_ext里？
   de.pcp8 := pcp4 + 4.U // for link
   locally {
     val alu_is = (no: Int, sel: UInt) => sel === (if (no == 1) sel_alu1 else sel_alu2)

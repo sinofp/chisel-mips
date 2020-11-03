@@ -17,7 +17,7 @@ class BrUnit(implicit c: Config = DefCon) extends Module {
   val isNotZero = io.sub_res =/= 0.U
   val isPos = io.sub_res(31) === 0.U
   if (c.debugBrUnit) {
-    printf(p"[log BrUint] io.sub_res = ${Binary(io.sub_res)}, isPos = $isPos, isNotZero = $isNotZero\n")
+    printf(p"[log BrUint] io.sub_res = ${Hexadecimal(io.sub_res)}, isPos = $isPos, isNotZero = $isNotZero\n")
   }
 
   io.branch := {
