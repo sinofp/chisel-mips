@@ -35,7 +35,10 @@ class DataMem(implicit c: Config = DefCon) extends Module {
   ))
 
   if (c.debugDataMem) {
-    printf(p"[log DataMem] wen = $wen, addr = ${Binary(addr)}, wdata = ${Binary(wdata)}, " +
-      p"size = ${Binary(size)}, rdata_word = ${Binary(rdata_word)},  rdata = ${Binary(rdata)}\n")
+    val cnt = Counter(true.B, 100)
+    printf(p"[log DataMem]\n\tcycle=${cnt._1}\n" +
+      p"\twen = $wen, addr = ${Hexadecimal(addr)}, wdata = ${Hexadecimal(wdata)}, " +
+      p"size = ${Hexadecimal(size)}, rdata_word = ${Hexadecimal(rdata_word)},  rdata = ${Hexadecimal(rdata)}\n" +
+      p"\t0($$0) = ${Hexadecimal(mem.read(0.U))}\n")
   }
 }

@@ -86,14 +86,18 @@ class CtrlSigs extends Bundle {
 
   implicit def uint2BitPat(x: UInt): BitPat = BitPat(x)
 
-  private val default: List[BitPat] = List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_X, 0.U, 0.U,
-    0.U, 0.U, XX, XX, XXX, MEM_WORD, X)
+  implicit def int2BitPat(x: Int): BitPat = BitPat(x.U)
+
+  private val default: List[BitPat] = List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_X, 0, 0, 0, 0, XX, XX, XXX, MEM_WORD, X)
 
   private val table: Array[(BitPat, List[BitPat])] = Array(
-    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0.U),
-    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX, 0.U),
-    SUB -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_SUB, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0.U),
-    BLTZ -> List(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B, FN_SLT, 0.U, 0.U, 0.U, 0.U, XX, XX, BR_TYPE_LT, XX)
+    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0),
+    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX, 0),
+    SUB -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_SUB, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0),
+    BEQ -> List(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, XX, XX, BR_TYPE_EQ, XX),
+    BLTZ -> List(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, XX, XX, BR_TYPE_LT, XX),
+    LW -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_MEM, BR_TYPE_NO, MEM_WORD, 1),
+    SW -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 1, 0, XX, XX, BR_TYPE_NO, MEM_WORD, 0),
   )
 
   def decode(inst: UInt): this.type = {

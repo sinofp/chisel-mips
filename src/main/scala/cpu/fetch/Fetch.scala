@@ -27,6 +27,6 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
   fd.inst := inst_mem.io.inst
 
   if (debug) {
-    printf(p"[log Fetch] pc_now = $pc_now, pcp4 = ${fd.pcp4}\n")
+    printf(p"[log Fetch]\n\tpc_now = ${Hexadecimal(pc_now)}, pc_next = ${Hexadecimal(pc_next)}, inst = ${Hexadecimal(fd.inst)}\n")
   }
 }

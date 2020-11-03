@@ -7,7 +7,6 @@ import chisel3._
 // @formatter:off
 case class Config(
     debugFetch: Boolean = false,
-    debugPC: Boolean = false,
     debugInstMem: Boolean = false,
     debugDecode: Boolean = false,
     debugCU: Boolean = false,
