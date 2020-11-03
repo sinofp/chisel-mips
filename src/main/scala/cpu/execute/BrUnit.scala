@@ -9,26 +9,28 @@ import cpu.util.{Config, DefCon}
 
 class BrUnit(implicit c: Config = DefCon) extends Module {
   val io = IO(new Bundle() {
-    val sub_res = Input(UInt(32.W))
+    val num1 = Input(UInt(32.W))
+    val num2 = Input(UInt(32.W))
+    val slt_res = Input(UInt(32.W))
     val br_type = Input(UInt(SZ_BR_TYPE))
     val branch = Output(Bool())
   })
 
-  val isNotZero = io.sub_res =/= 0.U
-  val isPos = io.sub_res(31) === 0.U
+  val equal = io.num1 === io.num2
+  val less = io.slt_res(0)
   if (c.debugBrUnit) {
-    printf(p"[log BrUint] io.sub_res = ${Hexadecimal(io.sub_res)}, isPos = $isPos, isNotZero = $isNotZero\n")
+    printf(p"[log BrUint] io.slt_res = ${Hexadecimal(io.slt_res)}, less = $less, equal = $equal\n")
   }
 
   io.branch := {
     val is = (tpe: UInt) => io.br_type === tpe
     MuxCase(false.B, Array(
-      is(BR_TYPE_EQ) -> isNotZero,
-      is(BR_TYPE_NE) -> !isNotZero,
-      is(BR_TYPE_GE) -> isPos,
-      is(BR_TYPE_GT) -> (isPos && isNotZero),
-      is(BR_TYPE_LT) -> (!isPos),
-      is(BR_TYPE_LT) -> (!isPos && isNotZero),
+      is(BR_TYPE_EQ) -> equal,
+      is(BR_TYPE_NE) -> !equal,
+      is(BR_TYPE_GE) -> !less,
+      is(BR_TYPE_GT) -> (!less && !equal),
+      is(BR_TYPE_LE) -> (less || equal),
+      is(BR_TYPE_LT) -> less,
     ))
   }
 }

@@ -57,9 +57,11 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   }
 
   val br_unit = Module(new BrUnit)
+  br_unit.io.num1 := num1
+  br_unit.io.num2 := num2
   locally {
     import br_unit.io._
-    sub_res := adder_out
+    slt_res := alu.io.out
     br_type := br_t
     ef.branch := branch
   }
