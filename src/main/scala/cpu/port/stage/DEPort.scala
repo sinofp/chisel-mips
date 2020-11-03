@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package cpu.port
+package cpu.port.stage
 
 import chisel3._
 import cpu.decode.CtrlSigDef.{SZ_BR_TYPE, SZ_MEM_TYPE, SZ_SEL_REG_WDATA}

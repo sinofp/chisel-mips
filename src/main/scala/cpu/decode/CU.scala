@@ -81,24 +81,25 @@ class CtrlSigs extends Bundle {
   val sel_reg_wdata = UInt(SZ_SEL_REG_WDATA)
   val br_type = UInt(SZ_BR_TYPE)
   val mem_size = UInt(SZ_MEM_TYPE)
+  val load = Bool()
   // todo ...?
 
   implicit def uint2BitPat(x: UInt): BitPat = BitPat(x)
 
   private val default: List[BitPat] = List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_X, 0.U, 0.U,
-    0.U, 0.U, XX, XX, XXX, MEM_WORD)
+    0.U, 0.U, XX, XX, XXX, MEM_WORD, X)
 
   private val table: Array[(BitPat, List[BitPat])] = Array(
-    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
-    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX),
-    SUB -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_SUB, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX),
+    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0.U),
+    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX, 0.U),
+    SUB -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_SUB, 0.U, 0.U, 0.U, true.B, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0.U),
     BLTZ -> List(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B, FN_SLT, 0.U, 0.U, 0.U, 0.U, XX, XX, BR_TYPE_LT, XX)
   )
 
   def decode(inst: UInt): this.type = {
     val decoder = DecodeLogic(inst, default, table)
     val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, mul, div, mem_wen,
-      reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size)
+      reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load)
     sigs zip decoder foreach { case (s, d) => s := d }
     this
   }

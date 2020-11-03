@@ -33,13 +33,15 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   decode.wd <> writeback.wd
   decode.ed <> execute.ed
   decode.md <> memory.md
-  decode.hd <> hazard.hd
   execute.de <> decode.de
   memory.em <> execute.em
   writeback.mw <> memory.mw
-  hazard.eh <> execute.eh
-  hazard.mh <> memory.mh
-  hazard.wh <> writeback.wh
+
+  hazard.fh <> fetch.hf
+  hazard.dh <> decode.hd
+  hazard.eh <> execute.he
+  hazard.mh <> memory.hm
+  hazard.wh <> writeback.hw
 }
 
 object Top extends App {

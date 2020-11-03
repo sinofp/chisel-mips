@@ -1,11 +1,13 @@
 // See LICENSE for license details.
 
-package cpu.port
+package cpu.port.hazard
 
 import chisel3._
 import cpu.decode.CtrlSigDef.SZ_FORWARD
+import cpu.port.{Flush, Stall}
 
-class HDPort(val readPorts: Int) extends Bundle {
+class DHPort(val readPorts: Int) extends Bundle with Flush with Stall {
   val raddr = Input(Vec(readPorts, UInt(5.W)))
+  val prev_load = Input(Bool())
   val forward = Output(Vec(readPorts, UInt(SZ_FORWARD)))
 }

@@ -5,19 +5,18 @@ package cpu.memory
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.port.{EMPort, ForwardPort, MWPort}
+import cpu.port.hazard.{MHPort, WdataPort}
+import cpu.port.stage.{EMPort, MWPort}
 import cpu.util.{Config, DefCon}
 
 class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val em = IO(Input(new EMPort))
   val mw = IO(Output(new MWPort))
   // forward
-  val mh = IO(Output(new ForwardPort))
-  mh.wen := mw.reg_wen
-  mh.waddr := mw.reg_waddr
-  val md = IO(new Bundle() {
-    val wdata = Output(UInt(32.W))
-  })
+  val hm = IO(Flipped(new MHPort))
+  hm.wen := mw.reg_wen
+  hm.waddr := mw.reg_waddr
+  val md = IO(Output(new WdataPort))
   md.wdata := MuxCase(0.U, Array(
     (mw.sel_reg_wdata === SEL_REG_WDATA_ALU) -> mw.alu_out,
     (mw.sel_reg_wdata === SEL_REG_WDATA_LNK) -> mw.pcp8,

@@ -4,7 +4,7 @@ package cpu.decode
 
 import chisel3._
 import chisel3.util.Counter
-import cpu.port.WDPort
+import cpu.port.stage.WDPort
 import cpu.util.{Config, DefCon}
 
 class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {

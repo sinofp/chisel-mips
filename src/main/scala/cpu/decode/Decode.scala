@@ -5,7 +5,8 @@ package cpu.decode
 import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
-import cpu.port.{DEPort, FDPort, HDPort, WDPort}
+import cpu.port.hazard.{DHPort, WdataPort}
+import cpu.port.stage.{DEPort, FDPort, WDPort}
 import cpu.util.{Config, DefCon}
 
 class Decode(implicit c: Config = DefCon) extends MultiIOModule {
@@ -13,14 +14,10 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val de = IO(Output(new DEPort))
   val wd = IO(Input(new WDPort))
   // forward
-  val ed = IO(new Bundle() {
-    val wdata = Input(UInt(32.W))
-  })
-  val md = IO(new Bundle() {
-    val wdata = Input(UInt(32.W))
-  })
+  val ed = IO(Input(new WdataPort))
+  val md = IO(Input(new WdataPort))
   val readPorts = 2
-  val hd = IO(Flipped(new HDPort(readPorts)))
+  val hd = IO(Flipped(new DHPort(readPorts))) // todo flush stall
 
   val inst = RegNext(fd.inst, 0.U(32.W))
   val pcp4 = RegNext(fd.pcp4, 0.U)
@@ -62,6 +59,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   // forward
   hd.raddr(0) := rs
   hd.raddr(1) := rt
+  hd.prev_load := RegNext(cu.ctrl.load, false.B)
   val forward_reg = (i: Int) => {
     val is = (forward_type: UInt) => hd.forward(i) === forward_type
     MuxCase(reg_file.io.rdata(i), Array(

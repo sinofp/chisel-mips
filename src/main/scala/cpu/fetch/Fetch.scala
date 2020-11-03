@@ -4,7 +4,8 @@ package cpu.fetch
 
 import chisel3._
 import chisel3.util.MuxCase
-import cpu.port.FDPort
+import cpu.port.hazard.FHPort
+import cpu.port.stage.FDPort
 import cpu.util.{Config, DefCon}
 
 class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
@@ -14,6 +15,7 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
     val jump = Input(Bool())
   })
   val fd = IO(Output(new FDPort))
+  val hf = IO(Flipped(new FHPort)) // todo stall flush
 
   val pc_next = MuxCase(fd.pcp4, Array(ef.jump -> ef.pc_jump))
   val pc_now = RegNext(pc_next, 0.U)
