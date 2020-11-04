@@ -4,9 +4,9 @@ package cpu.port.hazard
 
 import chisel3._
 import cpu.decode.CtrlSigDef.SZ_FORWARD
-import cpu.port.Stall
+import cpu.port.{Flush, Stall}
 
-class DHPort(val readPorts: Int) extends Bundle with Stall {
+class DHPort(val readPorts: Int) extends Bundle with Stall with Flush {
   val raddr = Input(Vec(readPorts, UInt(5.W)))
   val prev_load = Input(Bool())
   val forward = Output(Vec(readPorts, UInt(SZ_FORWARD)))

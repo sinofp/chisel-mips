@@ -3,7 +3,7 @@
 package cpu.fetch
 
 import chisel3._
-import chisel3.util.MuxCase
+import chisel3.util.{Counter, MuxCase}
 import cpu.port.hazard.FHPort
 import cpu.port.stage.FDPort
 import cpu.util.{Config, DefCon}
@@ -27,6 +27,8 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
   fd.inst := inst_mem.io.inst
 
   if (debug) {
-    printf(p"[log Fetch]\n\tpc_now = ${Hexadecimal(pc_now)}, pc_next = ${Hexadecimal(pc_next)}, inst = ${Hexadecimal(fd.inst)}\n")
+    val cnt = Counter(true.B, 100)
+    printf(p"[log Fetch]\n\tcycle = ${cnt._1}\n\tpc_now >> 2 = ${Decimal(pc_now / 4.U)}, pc_next >> 2 = ${Decimal(pc_next / 4.U)}, " +
+      p"inst = ${Hexadecimal(fd.inst)}\n\tstall = ${hf.stall}, jump = ${ef.jump}, pc_jump >> 2 = ${Decimal(ef.pc_jump / 4.U)}\n")
   }
 }

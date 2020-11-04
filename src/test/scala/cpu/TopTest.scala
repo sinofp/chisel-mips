@@ -49,16 +49,15 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "112a0002",
       "00000000",
       "20094567",
-      "3c010000",
-      "342189ab",
-      "00014820",
+      "200989ab",
       "00000000",
       "1000ffff",
       "00000000"
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugDataMem = true, debugBrUnit = true, debugFetch = true)
+    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugDataMem = true, debugBrUnit = true, debugFetch = true, debugExecute = true)
     test(new Top) { c =>
-      c.clock.step(10) // 16)
+      c.clock.step(14)
+      // todo 用程序驗證 $t1 後幾位不是 4567，是 89ab
     }
   }
 }

@@ -37,13 +37,15 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   val stall = dh.forward.exists((_: UInt) === FORWARD_EXE) && dh.prev_load
   fh.stall := stall
   dh.stall := stall
+  eh.flush := stall
+
   //                        ↓ branch flush
   // cycle         : c1 c2 c3 c4 c5
   // branch        : f1 d1 e1 m1 w1
-  // delay slot    :    f2 d2 xx xx xx
-  // inst to flush :       f3 d3 e3 m3 w3
+  // delay slot    :    f2 d2 e2 m2 w2
+  // inst to flush :       f3 xx xx xx xx
   // target        :          f4 d4 e4 m4 w4
   // 在 c3, execute 中的 br_unit 判断出要 branch
-  // c4 时, fetch, decode 照样刷新, 但 execute 要关掉各种副作用
-  eh.flush := stall || eh.branch
+  // c4 时, fetch 照样刷新, 但 decode 要关掉各种副作用
+  dh.flush := eh.branch
 }

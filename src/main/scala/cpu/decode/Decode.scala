@@ -20,7 +20,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val hd = IO(Flipped(new DHPort(readPorts)))
 
   val inst = Wire(UInt(32.W))
-  inst := RegNext(Mux(hd.stall, inst, fd.inst), 0.U(32.W))
+  inst := RegNext(MuxCase(fd.inst, Array(hd.stall -> inst, hd.flush -> 0.U)), 0.U)
   val pcp4 = Wire(UInt(32.W))
   pcp4 := RegNext(Mux(hd.stall, pcp4, fd.pcp4), 0.U)
 

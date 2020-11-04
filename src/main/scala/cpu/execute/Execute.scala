@@ -55,7 +55,10 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   adder_out := alu.io.adder_out
 
   if (c.debugExecute) {
-    printf(p"[log execute] in1 = ${Binary(de.num1)}, in2 = ${Binary(de.num2)}, adder_out = ${Binary(adder_out)}\n")
+    printf(p"[log execute]\n\tin1 = ${Hexadecimal(de.num1)}, in2 = ${Hexadecimal(de.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")
+  }
+  if (c.debugBrUnit) {
+    printf(p"[log execute]\n\tbranch = ${ef.branch}, br_addr >> 2 = ${ef.br_addr / 4.U}\n")
   }
 
   val br_unit = Module(new BrUnit)
