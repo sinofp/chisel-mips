@@ -13,6 +13,7 @@ case class Config(
     debugRegFile: Boolean = false,
     debugExecute: Boolean = false,
     debugALU: Boolean = false,
+    debugMul: Boolean = false,
     debugBrUnit: Boolean = false,
     debugMemory: Boolean = false,
     debugDataMem: Boolean = false,
