@@ -5,7 +5,7 @@ package cpu.execute
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.execute.ALU.{FN_DIV, FN_DIVU}
+import cpu.execute.ALU.{FN_DIV, FN_DIVU, SZ_ALU_FN}
 import cpu.port.hazard.{EHPort, WdataPort}
 import cpu.port.stage.{DEPort, EMPort}
 import cpu.util.{Config, DefCon}
@@ -27,21 +27,27 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     (em.sel_reg_wdata === SEL_REG_WDATA_LNK) -> em.pcp8
   ))
 
-  val cu_mul = RegNext(de.mul)
-  val cu_div = RegNext(de.div)
-  val alu_fn = RegNext(de.alu_fn)
-  val num1 = RegNext(de.num1)
-  val num2 = RegNext(de.num2)
-  val br_t = RegNext(Mux(he.flush, BR_TYPE_NO, de.br_type))
+  val cu_mul = Wire(Bool())
+  cu_mul := RegNext(Mux(he.stall, cu_mul, de.mul))
+  val cu_div = Wire(Bool())
+  cu_div := RegNext(Mux(he.stall, cu_div, de.div))
+  val alu_fn = Wire(UInt(SZ_ALU_FN))
+  alu_fn := RegNext(Mux(he.stall, alu_fn, de.alu_fn))
+  val num1 = Wire(UInt(32.W))
+  num1 := RegNext(Mux(he.stall, num1, de.num1))
+  val num2 = Wire(UInt(32.W))
+  num2 := RegNext(Mux(he.stall, num2, de.num2))
+  val br_t = Wire(UInt(SZ_BR_TYPE))
+  br_t := RegNext(Mux(he.stall, br_t, Mux(he.flush, BR_TYPE_NO, de.br_type)))
 
-  em.pcp8 := RegNext(de.pcp8)
-  em.mem_wen := RegNext(Mux(he.flush, 0.U, de.mem_wen), 0.U)
-  em.reg_wen := RegNext(Mux(he.flush, 0.U, de.reg_wen), 0.U)
-  em.sel_reg_wdata := RegNext(de.sel_reg_wdata, 0.U)
-  em.reg_waddr := RegNext(de.reg_waddr, 0.U)
-  ef.br_addr := RegNext(de.br_addr)
-  em.mem_wdata := RegNext(de.mem_wdata)
-  em.mem_size := RegNext(de.mem_size)
+  em.pcp8 := RegNext(Mux(he.stall, em.pcp8, de.pcp8))
+  em.mem_wen := RegNext(Mux(he.stall, em.mem_wen, Mux(he.flush, 0.U, de.mem_wen)), 0.U)
+  em.reg_wen := RegNext(Mux(he.stall, em.reg_wen, Mux(he.flush, 0.U, de.reg_wen)), 0.U)
+  em.sel_reg_wdata := RegNext(Mux(he.stall, em.sel_reg_wdata, de.sel_reg_wdata), 0.U)
+  em.reg_waddr := RegNext(Mux(he.stall, em.reg_waddr, de.reg_waddr), 0.U)
+  ef.br_addr := RegNext(Mux(he.stall, ef.br_addr, de.br_addr))
+  em.mem_wdata := RegNext(Mux(he.stall, em.mem_wdata, de.mem_wdata))
+  em.mem_size := RegNext(Mux(he.stall, em.mem_size, de.mem_size))
 
   val alu = Module(new ALU)
   locally {
@@ -56,13 +62,14 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   adder_out := alu.io.adder_out
 
   val div = Module(new Div)
+  val div_start = (alu_fn === FN_DIV) || (alu_fn === FN_DIVU)
   locally {
     import div.io._
     dividend := num1
     divider := num2
-    start := (alu_fn === FN_DIV) || (alu_fn === FN_DIVU)
+    start := div_start
     sign := alu_fn === FN_DIV
-    ready := DontCare
+    he.div_not_ready := div_start && !ready
     quotient := DontCare
     remainder := DontCare
   }
