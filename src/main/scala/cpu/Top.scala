@@ -4,10 +4,12 @@ package cpu
 
 import chisel3._
 import chisel3.stage.ChiselStage
+import chisel3.util.experimental.BoringUtils
 import cpu.decode.Decode
 import cpu.execute.Execute
 import cpu.fetch.Fetch
 import cpu.memory.Memory
+import cpu.port.debug.TRegWindow
 import cpu.util.{Config, DefCon}
 import cpu.writeback.WriteBack
 
@@ -42,8 +44,14 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   hazard.eh <> execute.he
   hazard.mh <> memory.hm
   hazard.wh <> writeback.hw
+  val t_regs = if (c.debugTReg) Some(IO(Output(new TRegWindow()))) else None
+  if (c.debugTReg) {
+    t_regs.get.getElements.foreach(_ := 1.U)
+    t_regs.get.getElements.zipWithIndex.foreach { case (sink, idx) => BoringUtils.addSink(sink, s"reg$idx") }
+  }
 }
 
 object Top extends App {
+  //  implicit val c: Config = Config(debugTReg = true)
   new ChiselStage emitVerilog new Top
 }

@@ -5,6 +5,7 @@ package cpu.decode
 import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
+import cpu.port.debug.TRegWindow
 import cpu.port.hazard.{DHPort, WdataPort}
 import cpu.port.stage.{DEPort, FDPort, WDPort}
 import cpu.util.{Config, DefCon}

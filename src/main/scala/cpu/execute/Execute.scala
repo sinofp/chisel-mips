@@ -6,6 +6,7 @@ import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU.{FN_DIV, SZ_ALU_FN}
+import cpu.port.debug.TRegWindow
 import cpu.port.hazard.{EHPort, WdataPort}
 import cpu.port.stage.{DEPort, EMPort}
 import cpu.util.{Config, DefCon}

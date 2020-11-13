@@ -18,10 +18,11 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "01285022", // sub $t2, $t1, $t0
       "0540fffd", // bltz $t2, loop，后面全是初始化的NOP，延迟槽不用担心
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugBrUnit = true, debugExecute = true)
+    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugBrUnit = true, debugExecute = true, debugTReg = true)
     test(new Top) { c =>
-      // todo 看看RegFile的内容对不对
       c.clock.step(99)
+      c.t_regs.get.t0.expect(100.U)
+      c.t_regs.get.t1.expect("h13".U)
     }
   }
 
@@ -54,10 +55,11 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "1000ffff",
       "00000000"
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugDataMem = true, debugBrUnit = true, debugFetch = true, debugExecute = true)
+    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugDataMem = true, debugBrUnit = true,
+      debugFetch = true, debugExecute = true, debugTReg = true)
     test(new Top) { c =>
       c.clock.step(14)
-      // todo 用程序驗證 $t1 後幾位不是 4567，是 89ab
+      c.t_regs.get.t1.expect("hffff89ab".U)
     }
   }
 }

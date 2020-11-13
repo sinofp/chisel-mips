@@ -19,6 +19,7 @@ case class Config(
     debugDataMem: Boolean = false,
     debugWriteback: Boolean = false,
     debugHILO: Boolean = false,
+    debugTReg: Boolean = false,
     insts: Seq[UInt] = Seq(
       "20080064",
       "32290001",
