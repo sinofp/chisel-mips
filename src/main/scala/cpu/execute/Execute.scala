@@ -5,6 +5,7 @@ package cpu.execute
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
+import cpu.execute.ALU.{FN_DIV, FN_DIVU}
 import cpu.port.hazard.{EHPort, WdataPort}
 import cpu.port.stage.{DEPort, EMPort}
 import cpu.util.{Config, DefCon}
@@ -26,12 +27,12 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     (em.sel_reg_wdata === SEL_REG_WDATA_LNK) -> em.pcp8
   ))
 
-  val mul = RegNext(de.mul)
-  val div = RegNext(de.div)
+  val cu_mul = RegNext(de.mul)
+  val cu_div = RegNext(de.div)
   val alu_fn = RegNext(de.alu_fn)
   val num1 = RegNext(de.num1)
   val num2 = RegNext(de.num2)
-  val br_t = RegNext(Mux(he.flush, BR_TYPE_NO,de.br_type))
+  val br_t = RegNext(Mux(he.flush, BR_TYPE_NO, de.br_type))
 
   em.pcp8 := RegNext(de.pcp8)
   em.mem_wen := RegNext(Mux(he.flush, 0.U, de.mem_wen), 0.U)
@@ -53,6 +54,18 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   }
   val adder_out = Wire(UInt(32.W))
   adder_out := alu.io.adder_out
+
+  val div = Module(new Div)
+  locally {
+    import div.io._
+    dividend := num1
+    divider := num2
+    start := (alu_fn === FN_DIV) || (alu_fn === FN_DIVU)
+    sign := alu_fn === FN_DIV
+    ready := DontCare
+    quotient := DontCare
+    remainder := DontCare
+  }
 
   if (c.debugExecute) {
     printf(p"[log execute]\n\tin1 = ${Hexadecimal(de.num1)}, in2 = ${Hexadecimal(de.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")
