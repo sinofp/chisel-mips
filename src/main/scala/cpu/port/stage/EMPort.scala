@@ -4,8 +4,9 @@ package cpu.port.stage
 
 import chisel3._
 import cpu.decode.CtrlSigDef.{SZ_MEM_TYPE, SZ_SEL_REG_WDATA}
+import cpu.port.{HILO, HILOWen}
 
-class EMPort extends Bundle {
+class EMPort extends Bundle with HILO with HILOWen {
   val mem_wen = Bool()
   val mem_wdata = UInt(32.W)
   val mem_size = UInt(SZ_MEM_TYPE)

@@ -36,6 +36,8 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
     de.sel_reg_wdata := sel_reg_wdata
     de.br_type := br_type
     de.mem_size := mem_size
+    de.hi_wen := hi_wen
+    de.lo_wen := lo_wen
   }
   val sel_alu1 = cu.ctrl.sel_alu1
   val sel_alu2 = cu.ctrl.sel_alu2

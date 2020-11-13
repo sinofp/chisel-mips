@@ -5,7 +5,7 @@ package cpu.execute
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.execute.ALU.{FN_DIV, FN_DIVU, SZ_ALU_FN}
+import cpu.execute.ALU.{FN_DIV, SZ_ALU_FN}
 import cpu.port.hazard.{EHPort, WdataPort}
 import cpu.port.stage.{DEPort, EMPort}
 import cpu.util.{Config, DefCon}
@@ -48,6 +48,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   ef.br_addr := RegNext(Mux(he.stall, ef.br_addr, de.br_addr))
   em.mem_wdata := RegNext(Mux(he.stall, em.mem_wdata, de.mem_wdata))
   em.mem_size := RegNext(Mux(he.stall, em.mem_size, de.mem_size))
+  em.hi_wen := RegNext(Mux(he.stall, em.hi_wen, de.hi_wen), 0.U)
+  em.lo_wen := RegNext(Mux(he.stall, em.lo_wen, de.lo_wen), 0.U)
 
   val alu = Module(new ALU)
   locally {
@@ -62,17 +64,19 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   adder_out := alu.io.adder_out
 
   val div = Module(new Div)
-  val div_start = (alu_fn === FN_DIV) || (alu_fn === FN_DIVU)
   locally {
     import div.io._
     dividend := num1
     divider := num2
-    start := div_start
+    start := cu_div
     sign := alu_fn === FN_DIV
-    he.div_not_ready := div_start && !ready
-    quotient := DontCare
-    remainder := DontCare
+    he.div_not_ready := cu_div && !ready
   }
+
+  // 如果不是除法或乘法，那hilo向后传的值是用rs读出来的num1
+  // todo add mul
+  em.hi := Mux(cu_div, div.io.quotient, num1)
+  em.lo := Mux(cu_div, div.io.remainder, num1)
 
   if (c.debugExecute) {
     printf(p"[log execute]\n\tin1 = ${Hexadecimal(de.num1)}, in2 = ${Hexadecimal(de.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")

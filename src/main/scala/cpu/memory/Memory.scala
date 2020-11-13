@@ -28,6 +28,10 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   mw.sel_reg_wdata := RegNext(em.sel_reg_wdata)
   mw.reg_waddr := RegNext(em.reg_waddr)
   mw.alu_out := RegNext(em.alu_out)
+  mw.hi_wen := RegNext(em.hi_wen)
+  mw.hi := RegNext(em.hi)
+  mw.lo_wen := RegNext(em.lo_wen)
+  mw.lo := RegNext(em.lo)
 
   val data_mem = Module(new DataMem)
   locally {

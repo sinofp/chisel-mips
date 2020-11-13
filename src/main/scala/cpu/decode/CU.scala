@@ -6,6 +6,7 @@ import chisel3._
 import chisel3.util._
 import cpu.decode.Instructions._
 import cpu.execute.ALU._
+import cpu.port.HILOWen
 import cpu.util._
 
 // @formatter:off
@@ -68,7 +69,7 @@ object CtrlSigDef {
 
 import cpu.decode.CtrlSigDef._
 
-class CtrlSigs extends Bundle {
+class CtrlSigs extends Bundle with HILOWen {
   val sel_alu1 = UInt(SZ_SEL_ALU1)
   val sel_alu2 = UInt(SZ_SEL_ALU2)
   val sel_imm = UInt(SZ_SEL_IMM)
@@ -88,22 +89,22 @@ class CtrlSigs extends Bundle {
 
   implicit def int2BitPat(x: Int): BitPat = BitPat(x.U)
 
-  private val default: List[BitPat] = List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_X, 0, 0, 0, 0, XX, XX, XXX, MEM_WORD, X)
+  private val default: List[BitPat] = List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_X, 0, 0, 0, 0, XX, XX, XXX, MEM_WORD, X, X, X)
 
   private val table: Array[(BitPat, List[BitPat])] = Array(
-    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0),
-    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX, 0),
-    SUB -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_SUB, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0),
-    BEQ -> List(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, XX, XX, BR_TYPE_EQ, XX),
-    BLTZ -> List(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, XX, XX, BR_TYPE_LT, XX),
-    LW -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_MEM, BR_TYPE_NO, MEM_WORD, 1),
-    SW -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 1, 0, XX, XX, BR_TYPE_NO, MEM_WORD, 0),
+    ADD -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0, 0, 0),
+    ADDI -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, XXX, XX, 0, 0, 0),
+    SUB -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_SUB, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, XXX, XX, 0, 0, 0),
+    BEQ -> List(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, XX, XX, BR_TYPE_EQ, XX, 0, 0),
+    BLTZ -> List(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, XX, XX, BR_TYPE_LT, XX, 0, 0),
+    LW -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_MEM, BR_TYPE_NO, MEM_WORD, 1, 0, 0),
+    SW -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 1, 0, XX, XX, BR_TYPE_NO, MEM_WORD, 0, 0, 0),
   )
 
   def decode(inst: UInt): this.type = {
     val decoder = DecodeLogic(inst, default, table)
     val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, mul, div, mem_wen,
-      reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load)
+      reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen)
     sigs zip decoder foreach { case (s, d) => s := d }
     this
   }

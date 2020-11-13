@@ -19,6 +19,10 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val sel_reg_wdata = RegNext(mw.sel_reg_wdata)
   val mem_rdata = RegNext(mw.mem_rdata)
   val alu_out = RegNext(mw.alu_out)
+  val hi_wen = RegNext(mw.hi_wen)
+  val hi = RegNext(mw.hi)
+  val lo_wen = RegNext(mw.lo_wen)
+  val lo = RegNext(mw.lo)
 
   wd.wen := RegNext(mw.reg_wen, false.B)
   wd.waddr := RegNext(mw.reg_waddr)
@@ -35,11 +39,12 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
 
   val hilo = Module(new HILO)
   locally {
-    import hilo.io._
-    wen := DontCare
-    _hi := DontCare
-    _lo := DontCare
-    hi := DontCare
-    lo := DontCare
+    import hilo.{io => hl}
+    hl.hi_wen := hi_wen
+    hl.lo_wen := lo_wen
+    hl._hi := hi
+    hl._lo := lo
+    hl.hi := DontCare
+    hl.lo := DontCare
   }
 }

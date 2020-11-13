@@ -7,7 +7,8 @@ import cpu.util.{Config, DefCon}
 
 class HILO(implicit c: Config = DefCon) extends Module {
   val io = IO(new Bundle() {
-    val wen = Input(Bool())
+    val hi_wen = Input(Bool())
+    val lo_wen = Input(Bool())
     val _hi = Input(UInt(32.W))
     val _lo = Input(UInt(32.W))
     val hi = Output(UInt(32.W))
@@ -16,11 +17,6 @@ class HILO(implicit c: Config = DefCon) extends Module {
 
   import io._
 
-  hi := RegNext(hi, 0.U)
-  lo := RegNext(lo, 0.U)
-
-  when(wen) {
-    hi := _hi
-    lo := _lo
-  }
+  hi := RegNext(Mux(hi_wen, _hi, hi), 0.U)
+  lo := RegNext(Mux(lo_wen, _lo, lo), 0.U)
 }

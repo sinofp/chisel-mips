@@ -20,3 +20,13 @@ trait Flush extends Bundle {
 trait Stall extends Bundle {
   val stall = Output(Bool())
 }
+
+trait HILO extends Bundle {
+  val hi = UInt(32.W)
+  val lo = UInt(32.W)
+}
+
+trait HILOWen extends Bundle {
+  val hi_wen = Bool()
+  val lo_wen = Bool()
+}
