@@ -44,8 +44,11 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   hazard.eh <> execute.he
   hazard.mh <> memory.hm
   hazard.wh <> writeback.hw
-  val t_regs = if (c.debugTReg) Some(IO(Output(new TRegWindow()))) else None
-  if (c.debugTReg) {
+
+  execute.me <> memory.me
+  execute.we <> writeback.we
+  val t_regs = if (c.dTReg) Some(IO(Output(new TRegWindow()))) else None
+  if (c.dTReg) {
     t_regs.get.getElements.foreach(_ := 1.U)
     t_regs.get.getElements.reverse.zipWithIndex.foreach { case (sink, idx) => BoringUtils.addSink(sink, s"reg$idx") }
   }

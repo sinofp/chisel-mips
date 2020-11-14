@@ -3,6 +3,6 @@
 package cpu.port.hazard
 
 import chisel3._
-import cpu.port.WenWaddr
+import cpu.port.{HILOWenIn, WenWaddr}
 
-class MHPort extends Bundle with WenWaddr
+class MHPort extends Bundle with WenWaddr with HILOWenIn

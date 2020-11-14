@@ -6,7 +6,7 @@ import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.WHPort
-import cpu.port.stage.{MWPort, WDPort}
+import cpu.port.stage.{MWPort, WDPort, WEPort}
 import cpu.util.{Config, DefCon}
 
 class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
@@ -14,7 +14,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val wd = IO(Output(new WDPort))
   val hw = IO(Flipped(new WHPort))
 
-  val pcp8 = RegNext(mw.pcp8 - 8.U)
+  val pcp8 = RegNext(mw.pcp8)
   val pc = pcp8 - 8.U
   val sel_reg_wdata = RegNext(mw.sel_reg_wdata)
   val mem_rdata = RegNext(mw.mem_rdata)
@@ -47,4 +47,9 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   }
   hw.wen := wd.wen
   hw.waddr := wd.waddr
+  hw.hi_wen := hi_wen
+  hw.lo_wen := lo_wen
+  val we = IO(Output(new WEPort))
+  we.hi := hilo.io.hi
+  we.lo := hilo.io.lo
 }

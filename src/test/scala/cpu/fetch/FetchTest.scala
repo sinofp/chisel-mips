@@ -26,7 +26,7 @@ class FetchTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "increase PC" in {
-    implicit val conf: Config = Config(debugFetch = true)
+    implicit val conf: Config = Config(dFetch = true)
     test(new Fetch) { c =>
       for (x <- 1 to 10) {
         c.fd.pcp4.expect((x * 4).U)

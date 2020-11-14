@@ -18,7 +18,7 @@ class BrUnit(implicit c: Config = DefCon) extends Module {
 
   val equal = io.num1 === io.num2
   val less = io.slt_res(0)
-  if (c.debugBrUnit) {
+  if (c.dBrUnit) {
     printf(p"[log BrUint]\n\tnum1 = ${Hexadecimal(io.num1)}, num2 = ${Hexadecimal(io.num2)}, br_type = ${Hexadecimal(io.br_type)}\n" +
       p"\tio.slt_res = ${Hexadecimal(io.slt_res)}, less = $less, equal = $equal, branch = ${io.branch}\n")
   }

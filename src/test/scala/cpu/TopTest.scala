@@ -18,7 +18,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "01285022", // sub $t2, $t1, $t0
       "0540fffd", // bltz $t2, loop，后面全是初始化的NOP，延迟槽不用担心
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugBrUnit = true, debugExecute = true, debugTReg = true)
+    implicit val c: Config = Config(insts = insts, dRegFile = true, dBrUnit = true, dExecute = true, dTReg = true)
     test(new Top) { c =>
       c.clock.step(99)
       c.t_regs.get.t0.expect(100.U)
@@ -55,8 +55,8 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "1000ffff",
       "00000000"
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugDataMem = true, debugBrUnit = true,
-      debugFetch = true, debugExecute = true, debugTReg = true)
+    implicit val c: Config = Config(insts = insts, dRegFile = true, dDataMem = true, dBrUnit = true,
+      dFetch = true, dExecute = true, dTReg = true)
     test(new Top) { c =>
       c.clock.step(14)
       c.t_regs.get.t1.expect("hffff89ab".U)
@@ -66,16 +66,24 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   it should "handle hilo" in {
     val insts = Array(
       "20091234", // addi $t1, $0, 0x1234
+      "01200011", // mthi $t1 -- cycle 6
+      "00005010", // mfhi $t2 -- cycle 7
+      // "00000000", // 测试从m前推到d
+      "01494820", // add $t1, $t2, $t1 -- execute 在 cycle 5
+      "00000011", // mthi $0
       "01200011", // mthi $t1
-      "00005010", // mfhi $t2
-      "012a4820", // add $t1, $t1, $t2
+      "01400011", // mthi $t2
+      "00006010", // mfhi $t4
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugTReg = true)
+    implicit val c: Config = Config(insts = insts, dRegFile = true, dTReg = true, dHILO = true, dExecute = true, dForward = true)
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t2.expect("h1234".U)
       c.clock.step(1)
-      c.t_regs.get.t1.expect("h2468".U) // todo add forwarding for hilo
+      // c.clock.step(1)
+      c.t_regs.get.t1.expect("h2468".U)
+      c.clock.step(4)
+      c.t_regs.get.t4.expect("h1234".U)
     }
   }
 }

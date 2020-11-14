@@ -3,6 +3,7 @@
 package cpu.writeback
 
 import chisel3._
+import chisel3.util.Counter
 import cpu.util.{Config, DefCon}
 
 class HILO(implicit c: Config = DefCon) extends Module {
@@ -19,4 +20,9 @@ class HILO(implicit c: Config = DefCon) extends Module {
 
   hi := RegNext(Mux(hi_wen, _hi, hi), 0.U)
   lo := RegNext(Mux(lo_wen, _lo, lo), 0.U)
+
+  if (c.dHILO) {
+    val cnt = Counter(true.B, 100)
+    printf(p"[log HILO]\n\tcycle = ${cnt._1}\n\thi = ${Hexadecimal(hi)}, lo = ${Hexadecimal(lo)}\n")
+  }
 }

@@ -34,7 +34,7 @@ class DataMem(implicit c: Config = DefCon) extends Module {
     (size === MEM_BYTE) -> Cat(Fill(24, 0.U), wdata(7, 0)),
   ))
 
-  if (c.debugDataMem) {
+  if (c.dDataMem) {
     val cnt = Counter(true.B, 100)
     printf(p"[log DataMem]\n\tcycle=${cnt._1}\n" +
       p"\twen = $wen, addr = ${Hexadecimal(addr)}, wdata = ${Hexadecimal(wdata)}, " +

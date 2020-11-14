@@ -9,7 +9,7 @@ import cpu.port.stage.FDPort
 import cpu.util.{Config, DefCon}
 
 class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
-  val debug = c.debugFetch
+  val debug = c.dFetch
   val ef = IO(new Bundle() {
     val pc_jump = Input(UInt(32.W))
     val jump = Input(Bool())

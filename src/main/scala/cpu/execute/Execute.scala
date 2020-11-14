@@ -6,9 +6,8 @@ import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU.{FN_DIV, SZ_ALU_FN}
-import cpu.port.debug.TRegWindow
 import cpu.port.hazard.{EHPort, WdataPort}
-import cpu.port.stage.{DEPort, EMPort}
+import cpu.port.stage.{DEPort, EMPort, MEPort, WEPort}
 import cpu.util.{Config, DefCon}
 
 class Execute(implicit c: Config = DefCon) extends MultiIOModule {
@@ -22,11 +21,17 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val he = IO(Flipped(new EHPort))
   he.wen := em.reg_wen
   he.waddr := em.reg_waddr
+  he.hi_wen := em.hi_wen
+  he.lo_wen := em.lo_wen
   val ed = IO(Output(new WdataPort))
   ed.wdata := MuxCase(0.U, Array(
     (em.sel_reg_wdata === SEL_REG_WDATA_ALU) -> em.alu_out,
-    (em.sel_reg_wdata === SEL_REG_WDATA_LNK) -> em.pcp8
+    (em.sel_reg_wdata === SEL_REG_WDATA_LNK) -> em.pcp8,
+    (em.sel_reg_wdata === SEL_REG_WDATA_HI) -> em.hi,
+    (em.sel_reg_wdata === SEL_REG_WDATA_LO) -> em.lo,
   ))
+  val me = IO(Input(new MEPort))
+  val we = IO(Input(new WEPort))
 
   val cu_mul = Wire(Bool())
   cu_mul := RegNext(Mux(he.stall, cu_mul, de.mul))
@@ -74,15 +79,22 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     he.div_not_ready := cu_div && !ready
   }
 
-  // 如果不是除法或乘法，那hilo向后传的值是用rs读出来的num1
   // todo add mul
-  em.hi := Mux(cu_div, div.io.quotient, num1)
-  em.lo := Mux(cu_div, div.io.remainder, num1)
+  em.hi := MuxCase(num1, Array( // 默认num1是mthi, rs读出来的值 -- 要加上em.hi_wen做条件限定么？
+    cu_div -> div.io.quotient,
+    (he.forward_hi === FORWARD_HILO_MEM) -> me.hi, // 前推时都是em.hi_wen=0的时候，所以改了向后传的hi也无所谓
+    (he.forward_hi === FORWARD_HILO_WB) -> we.hi,
+  ))
+  em.lo := MuxCase(num1, Array(
+    cu_div -> div.io.quotient,
+    (he.forward_lo === FORWARD_HILO_MEM) -> me.lo,
+    (he.forward_lo === FORWARD_HILO_WB) -> we.lo,
+  ))
 
-  if (c.debugExecute) {
+  if (c.dExecute) {
     printf(p"[log execute]\n\tin1 = ${Hexadecimal(de.num1)}, in2 = ${Hexadecimal(de.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")
   }
-  if (c.debugBrUnit) {
+  if (c.dBrUnit) {
     printf(p"[log execute]\n\tbranch = ${ef.branch}, br_addr >> 2 = ${ef.br_addr / 4.U}\n")
   }
 

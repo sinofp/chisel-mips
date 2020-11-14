@@ -30,3 +30,8 @@ trait HILOWen extends Bundle {
   val hi_wen = Bool()
   val lo_wen = Bool()
 }
+
+trait HILOWenIn extends Bundle {
+  val hi_wen = Input(Bool())
+  val lo_wen = Input(Bool())
+}

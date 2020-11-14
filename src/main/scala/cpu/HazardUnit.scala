@@ -3,7 +3,7 @@
 package cpu
 
 import chisel3._
-import chisel3.util.MuxCase
+import chisel3.util.{Counter, MuxCase}
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard._
 import cpu.util.{Config, DefCon}
@@ -17,16 +17,33 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   val wh = IO(new WHPort)
 
   // RegFile 数据前推
-  val forward_port = (i: Int) => MuxCase(FORWARD_DEF, Array(
+  val forward_port = (i: Int) => MuxCase(FORWARD_NO, Array(
     (eh.wen && (eh.waddr =/= 0.U) && dh.raddr(i) === eh.waddr) -> FORWARD_EXE,
     (mh.wen && (mh.waddr =/= 0.U) && dh.raddr(i) === mh.waddr) -> FORWARD_MEM,
     (wh.wen && (wh.waddr =/= 0.U) && dh.raddr(i) === wh.waddr) -> FORWARD_WB,
   ))
+  if (c.dForward) {
+    val cnt = Counter(true.B, 100)
+    printf(p"[log HazardUnit]\n\tcycle = ${cnt._1}\n" +
+      p"\tFORWARD(1): EXE = ${forward_port(0) === FORWARD_EXE}, MEM = ${forward_port(0) === FORWARD_MEM}, WB = ${forward_port(0) === FORWARD_WB}\n" +
+      p"\tFORWARD(2): EXE = ${forward_port(1) === FORWARD_EXE}, MEM = ${forward_port(1) === FORWARD_MEM}, WB = ${forward_port(1) === FORWARD_WB}\n")
+  }
 
   for (i <- 0 until readPorts) {
     dh.forward(i) := forward_port(i)
   }
 
+  // HILO 数据前推到 Execute，主要为了 mfhi $1 后面的指令用到 $1
+  eh.forward_hi := MuxCase(FORWARD_HILO_NO, Array(
+    (mh.hi_wen && !eh.hi_wen) -> FORWARD_HILO_MEM,
+    (wh.hi_wen && !eh.hi_wen) -> FORWARD_HILO_WB,
+  ))
+  eh.forward_lo := MuxCase(FORWARD_HILO_NO, Array(
+    (mh.lo_wen && !eh.lo_wen) -> FORWARD_HILO_MEM,
+    (wh.lo_wen && !eh.lo_wen) -> FORWARD_HILO_WB,
+  ))
+//  eh.forward_hi := FORWARD_HILO_NO
+//  eh.forward_lo := FORWARD_HILO_NO
   //        ↓ load stall
   // c1 c2 c3 c4 c5 c6 c7 (cycle)
   // f1 d1 e1 m1 w1

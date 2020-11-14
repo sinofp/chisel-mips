@@ -15,7 +15,7 @@ class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
 
   io.inst := mem(io.pc / 4.U)
 
-  if (c.debugInstMem) {
+  if (c.dInstMem) {
     printf(p"[log InstMem]\n" +
       p"\tinst 1 = ${Hexadecimal(mem(0.U))}\n" +
       p"\tinst 2 = ${Hexadecimal(mem(1.U))}\n" +

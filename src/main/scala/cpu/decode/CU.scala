@@ -29,10 +29,16 @@ object CtrlSigDef {
 
   // Forward
   val SZ_FORWARD = 2.W
-  val FORWARD_DEF = 0.U(SZ_FORWARD)
+  val FORWARD_NO = 0.U(SZ_FORWARD)
   val FORWARD_EXE = 1.U(SZ_FORWARD)
   val FORWARD_MEM = 2.U(SZ_FORWARD)
   val FORWARD_WB = 3.U(SZ_FORWARD)
+
+  // Forward HILO
+  val SZ_FORWARD_HILO = 2.W
+  val FORWARD_HILO_NO = 0.U(SZ_FORWARD_HILO)
+  val FORWARD_HILO_MEM = 1.U(SZ_FORWARD_HILO)
+  val FORWARD_HILO_WB = 2.U(SZ_FORWARD_HILO)
 
   // Select
   val SZ_SEL_ALU1 = 2.W
@@ -103,8 +109,8 @@ class CtrlSigs extends Bundle with HILOWen {
     SW -> List(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 1, 0, XX, XXX, BR_TYPE_NO, MEM_WORD, 0, 0, 0),
     MTHI -> List(SEL_ALU1_RS, XX, XXX, FN_X, 0, 0, 0, 0, XX, XXX, XXX, XX, 0, 1, 0),
     MTLO -> List(SEL_ALU1_RS, XX, XXX, FN_X, 0, 0, 0, 0, XX, XXX, XXX, XX, 0, 0, 1),
-    MFHI -> List(XX, XX, XXX, FN_X, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_HI, XXX, XX, 0, 1, 0),
-    MFLO -> List(XX, XX, XXX, FN_X, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_LO, XXX, XX, 0, 0, 1),
+    MFHI -> List(XX, XX, XXX, FN_X, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_HI, XXX, XX, 0, 0, 0),
+    MFLO -> List(XX, XX, XXX, FN_X, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_LO, XXX, XX, 0, 0, 0),
   )
 
   def decode(inst: UInt): this.type = {
