@@ -6,12 +6,13 @@ import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.{DHPort, WdataPort}
-import cpu.port.stage.{DEPort, FDPort, WDPort}
+import cpu.port.stage.{DEPort, DFPort, FDPort, WDPort}
 import cpu.util.{Config, DefCon}
 
 class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val fd = IO(Input(new FDPort))
   val de = IO(Output(new DEPort))
+  val df = IO(new DFPort)
   val wd = IO(Input(new WDPort))
   // forward
   val ed = IO(Input(new WdataPort))
@@ -78,6 +79,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   de.mem_wdata := rdata2
   val imm_ext = {
     val imm_is = sel => sel_imm === sel
+    df.jump := imm_is(SEL_IMM_J)
     MuxCase(0.U, Array(
       imm_is(SEL_IMM_U) -> Cat(0.U(16.W), imm),
       imm_is(SEL_IMM_S) -> Cat(Fill(16, imm(15)), imm),
@@ -86,6 +88,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
       imm_is(SEL_IMM_SH) -> Cat(0.U(27.W), inst(10, 6)),
     ))
   }
+  df.j_addr := imm_ext
 
   de.br_addr := pcp4 + imm_ext // 这个是不是应该放在imm_ext里？
   de.pcp8 := pcp4 + 4.U // for link

@@ -7,16 +7,13 @@ import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU.{FN_DIV, FN_MULT, SZ_ALU_FN}
 import cpu.port.hazard.{EHPort, WdataPort}
-import cpu.port.stage.{DEPort, EMPort, MEPort, WEPort}
+import cpu.port.stage._
 import cpu.util.{Config, DefCon}
 
 class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val de = IO(Input(new DEPort))
   val em = IO(Output(new EMPort))
-  val ef = IO(new Bundle() {
-    val branch = Output(Bool())
-    val br_addr = Output(UInt(32.W))
-  })
+  val ef = IO(new EFPort)
   // forward
   val he = IO(Flipped(new EHPort))
   he.wen := em.reg_wen

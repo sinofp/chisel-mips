@@ -23,14 +23,11 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   val writeback = Module(new WriteBack)
   val hazard = Module(new HazardUnit(2))
 
-  //  fetch.ef <> execute.ef
-  locally {
-    import execute.ef._
-    import fetch.ef._
-    pc_jump := br_addr
-    jump := branch // todo J
-    junk_output := branch
-  }
+  // br & j
+  fetch.ef <> execute.ef
+  fetch.df <> decode.df
+  junk_output := decode.df.jump
+
   decode.fd <> fetch.fd
   decode.wd <> writeback.wd
   decode.ed <> execute.ed
