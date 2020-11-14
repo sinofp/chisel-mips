@@ -24,13 +24,11 @@ object ALU {
   def FN_OR = UInt(6)
   def FN_REMU = FN_AND
   def FN_AND = UInt(7)
-  def FN_MUL = FN_ADD
   def FN_ADD = UInt(0)
-  def FN_MULH = FN_SL
+  def FN_MULT = FN_SL
   def FN_SL = UInt(1)
-  def FN_MULHSU = FN_SEQ
   def FN_SEQ = UInt(2)
-  def FN_MULHU = FN_SNE
+  def FN_MULTU = FN_SNE
   def FN_SNE = UInt(3)
   def isMulFN(fn: UInt, cmp: UInt) = fn(1, 0) === cmp(1, 0)
   def isSub(cmd: UInt) = cmd(3)

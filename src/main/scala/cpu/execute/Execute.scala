@@ -5,7 +5,7 @@ package cpu.execute
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.execute.ALU.{FN_DIV, SZ_ALU_FN}
+import cpu.execute.ALU.{FN_DIV, FN_MULT, SZ_ALU_FN}
 import cpu.port.hazard.{EHPort, WdataPort}
 import cpu.port.stage.{DEPort, EMPort, MEPort, WEPort}
 import cpu.util.{Config, DefCon}
@@ -79,14 +79,23 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     he.div_not_ready := cu_div && !ready
   }
 
-  // todo add mul
+  val mul = Module(new Mul)
+  locally {
+    import mul.io._
+    multiplicand := num1
+    multiplier := num2
+    sign := alu_fn === FN_MULT
+  }
+
   em.hi := MuxCase(num1, Array( // 默认num1是mthi, rs读出来的值 -- 要加上em.hi_wen做条件限定么？
     cu_div -> div.io.quotient,
+    cu_mul -> mul.io.product(63, 32),
     (he.forward_hi === FORWARD_HILO_MEM) -> me.hi, // 前推时都是em.hi_wen=0的时候，所以改了向后传的hi也无所谓
     (he.forward_hi === FORWARD_HILO_WB) -> we.hi,
   ))
   em.lo := MuxCase(num1, Array(
     cu_div -> div.io.quotient,
+    cu_mul -> mul.io.product(31, 0),
     (he.forward_lo === FORWARD_HILO_MEM) -> me.lo,
     (he.forward_lo === FORWARD_HILO_WB) -> we.lo,
   ))

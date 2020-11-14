@@ -111,6 +111,7 @@ class CtrlSigs extends Bundle with HILOWen {
     MTLO -> List(SEL_ALU1_RS, XX, XXX, FN_X, 0, 0, 0, 0, XX, XXX, XXX, XX, 0, 0, 1),
     MFHI -> List(XX, XX, XXX, FN_X, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_HI, XXX, XX, 0, 0, 0),
     MFLO -> List(XX, XX, XXX, FN_X, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_LO, XXX, XX, 0, 0, 0),
+    MULT -> List(SEL_ALU1_RS, SEL_ALU2_RT, XXX, FN_MULT, 1, 0, 0, 0, XX, XXX, XXX, XX, 0, 1, 1),
   )
 
   def decode(inst: UInt): this.type = {
