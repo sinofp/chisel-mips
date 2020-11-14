@@ -47,7 +47,7 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   val t_regs = if (c.debugTReg) Some(IO(Output(new TRegWindow()))) else None
   if (c.debugTReg) {
     t_regs.get.getElements.foreach(_ := 1.U)
-    t_regs.get.getElements.zipWithIndex.foreach { case (sink, idx) => BoringUtils.addSink(sink, s"reg$idx") }
+    t_regs.get.getElements.reverse.zipWithIndex.foreach { case (sink, idx) => BoringUtils.addSink(sink, s"reg$idx") }
   }
 }
 

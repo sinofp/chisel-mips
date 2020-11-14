@@ -62,4 +62,20 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.t_regs.get.t1.expect("hffff89ab".U)
     }
   }
+
+  it should "handle hilo" in {
+    val insts = Array(
+      "20091234", // addi $t1, $0, 0x1234
+      "01200011", // mthi $t1
+      "00005010", // mfhi $t2
+      "012a4820", // add $t1, $t1, $t2
+    ).map("h" + _).map(_.U)
+    implicit val c: Config = Config(insts = insts, debugRegFile = true, debugTReg = true)
+    test(new Top) { c =>
+      c.clock.step(7)
+      c.t_regs.get.t2.expect("h1234".U)
+      c.clock.step(1)
+      c.t_regs.get.t1.expect("h2468".U) // todo add forwarding for hilo
+    }
+  }
 }
