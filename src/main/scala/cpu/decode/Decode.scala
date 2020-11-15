@@ -79,6 +79,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   de.mem_wdata := rdata2
   val imm_ext = {
     val imm_is = sel => sel_imm === sel
+    // SEL_IMM_J时是J型指令
     df.jump := imm_is(SEL_IMM_J)
     MuxCase(0.U, Array(
       imm_is(SEL_IMM_U) -> Cat(0.U(16.W), imm),
@@ -86,9 +87,9 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
       imm_is(SEL_IMM_B) -> Cat(Fill(14, imm(15)), imm, 0.U(2.W)),
       imm_is(SEL_IMM_J) -> Cat(pcp4(31, 28), inst(25, 0), 0.U(2.W)),
       imm_is(SEL_IMM_SH) -> Cat(0.U(27.W), inst(10, 6)),
+      imm_is(SEL_IMM_LUI) -> imm ## 0.U(16.W),
     ))
   }
-  df.j_addr := imm_ext
 
   de.br_addr := pcp4 + imm_ext // 这个是不是应该放在imm_ext里？
   de.pcp8 := pcp4 + 4.U // for link
@@ -99,6 +100,8 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
       alu_is(2, SEL_ALU2_IMM) -> imm_ext,
       alu_is(2, SEL_ALU2_ZERO) -> 0.U)
     )
+    // J型指令中，如果alu1是SA，那就是JR，反之是J —— 多加CtrlSig？
+    df.j_addr := Mux(alu_is(1, SEL_ALU1_SA), rdata1, imm_ext)
   }
 
   de.reg_waddr := {

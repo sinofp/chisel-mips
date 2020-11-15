@@ -86,4 +86,19 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.t_regs.get.t4.expect("h1234".U)
     }
   }
+
+  it should "jump" in {
+    val insts = Array(
+      "08100003", // j aaa
+      "20090001", // addi $t1, $0, 1
+      "200a0002", // addi $t2, $0, 2 -- 跳过
+      "200b0003", // aaa: addi $t3, $0, 3
+    ).map("h" + _).map(_.U)
+    implicit val c: Config = Config(insts = insts, dRegFile = true, dTReg = true)
+    test(new Top) { c =>
+      c.clock.step(7)
+      c.t_regs.get.t2.expect(0.U)
+      c.t_regs.get.t3.expect(3.U)
+    }
+  }
 }
