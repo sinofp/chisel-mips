@@ -36,6 +36,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   cu_div := RegNext(Mux(he.stall, cu_div, de.div))
   val alu_fn = Wire(UInt(SZ_ALU_FN))
   alu_fn := RegNext(Mux(he.stall, alu_fn, de.alu_fn))
+  val alu_n = Wire(Bool())
+  alu_n := RegNext(Mux(he.stall, alu_n, de.alu_n))
   val num1 = Wire(UInt(32.W))
   num1 := RegNext(Mux(he.stall, num1, de.num1))
   val num2 = Wire(UInt(32.W))
@@ -60,7 +62,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     fn := alu_fn
     in1 := num1
     in2 := num2
-    em.alu_out := out
+    em.alu_out := Mux(alu_n, ~out, out)
     cmp_out := DontCare
   }
   val adder_out = Wire(UInt(32.W))

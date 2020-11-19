@@ -10,6 +10,7 @@ import cpu.port.HILOWen
 class DEPort extends Bundle with HILOWen {
   val pcp8 = UInt(32.W)
   val alu_fn = UInt(SZ_ALU_FN)
+  val alu_n = Bool()
   val mul = Bool()
   val div = Bool()
   val mem_wen = Bool()

@@ -3,7 +3,6 @@
 package cpu.decode
 
 import chisel3._
-import chisel3.stage.ChiselStage
 import chisel3.util.{BitPat => B}
 import cpu.decode.Instructions._
 import cpu.execute.ALU._
@@ -87,6 +86,7 @@ class CtrlSigs extends Bundle with HILOWen {
   val sel_alu2 = UInt(SZ_SEL_ALU2)
   val sel_imm = UInt(SZ_SEL_IMM)
   val alu_fn = UInt(SZ_ALU_FN)
+  val alu_n = Bool()
   val mul = Bool()
   val div = Bool()
   val mem_wen = Bool()
@@ -122,11 +122,17 @@ class CtrlSigs extends Bundle with HILOWen {
     AND -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_AND, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
     ANDI -> l(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_AND, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
     LUI -> l(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_U, FN_SL, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
-    //    NOR -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_NOR, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
+    NOR -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_OR, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0, 1),
     OR -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_OR, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
     ORI -> l(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_OR, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
     XOR -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_XOR, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
     XORI -> l(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_XOR, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
+    SLLV -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_SL, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
+    SLL -> l(SEL_ALU1_SA, SEL_ALU2_RT, SEL_IMM_SH, FN_SL, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
+    SRAV -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_SRA, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
+    SRA -> l(SEL_ALU1_SA, SEL_ALU2_RT, SEL_IMM_SH, FN_SRA, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
+    SRLV -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_SR, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
+    SRL -> l(SEL_ALU1_SA, SEL_ALU2_RT, SEL_IMM_SH, FN_SR, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0),
     BEQ -> l(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, SEL_REG_WADDR_X, SEL_REG_WDATA_X, BR_TYPE_NE, MEM_X, 0, 0, 0),
     BGEZ -> l(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, SEL_REG_WADDR_X, SEL_REG_WDATA_X, BR_TYPE_GE, MEM_X, 0, 0, 0),
     BGTZ -> l(SEL_ALU1_RS, SEL_ALU2_ZERO, SEL_IMM_B, FN_SLT, 0, 0, 0, 0, SEL_REG_WADDR_X, SEL_REG_WDATA_X, BR_TYPE_GT, MEM_X, 0, 0, 0),
@@ -147,13 +153,13 @@ class CtrlSigs extends Bundle with HILOWen {
   )
 
   // 为了IDE的参数提醒
-  private def l(sel_alu1: B, sel_alu2: B, sel_imm: B, alu_fn: B, mul: B, div: B, mem_wen: B, reg_wen: B, sel_reg_waddr: B, sel_reg_wdata: B, br_type: B, mem_size: B, load: B, hi_wen: B, lo_wen: B): List[B] = {
-    List(sel_alu1, sel_alu2, sel_imm, alu_fn, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen)
+  private def l(sel_alu1: B, sel_alu2: B, sel_imm: B, alu_fn: B, mul: B, div: B, mem_wen: B, reg_wen: B, sel_reg_waddr: B, sel_reg_wdata: B, br_type: B, mem_size: B, load: B, hi_wen: B, lo_wen: B, alu_n: B = 0): List[B] = {
+    List(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen)
   }
 
   def decode(inst: UInt): this.type = {
     val decoder = DecodeLogic(inst, default, table)
-    val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, mul, div, mem_wen,
+    val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen,
       reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen)
     sigs zip decoder foreach { case (s, d) => s := d }
     this

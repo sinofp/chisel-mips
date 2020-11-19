@@ -30,6 +30,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   locally {
     import cu.ctrl._
     de.alu_fn := alu_fn
+    de.alu_n := alu_n
     de.mul := mul
     de.div := div
     de.mem_wen := mem_wen
