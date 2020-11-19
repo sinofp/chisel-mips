@@ -22,23 +22,25 @@ class DataMem(implicit c: Config = DefCon) extends Module {
 
   when(wen) {
     mem.write(addr, MuxCase(wdata, Array(
-      (size === MEM_HALF) -> Cat(Fill(16, wdata(15)), wdata(15, 0)),
-      (size === MEM_BYTE) -> Cat(Fill(24, wdata(7)), wdata(7, 0)),
+      (size === MEM_H) -> Cat(Fill(16, wdata(15)), wdata(15, 0)),
+      (size === MEM_B) -> Cat(Fill(24, wdata(7)), wdata(7, 0)),
     )))
   }
 
-  val rdata_word = mem.read(addr)
+  val rword = mem.read(addr)
 
-  rdata := MuxCase(rdata_word, Array(
-    (size === MEM_HALF) -> Cat(Fill(16, 0.U), wdata(15, 0)),
-    (size === MEM_BYTE) -> Cat(Fill(24, 0.U), wdata(7, 0)),
+  rdata := MuxCase(rword, Array(
+    (size === MEM_HU) -> Cat(Fill(16, 0.U), rword(15, 0)),
+    (size === MEM_H) -> Cat(Fill(16, rword(15)), rword(15, 0)),
+    (size === MEM_BU) -> Cat(Fill(24, 0.U), rword(7, 0)),
+    (size === MEM_B) -> Cat(Fill(24, rword(7)), rword(7, 0)),
   ))
 
   if (c.dDataMem) {
     val cnt = Counter(true.B, 100)
     printf(p"[log DataMem]\n\tcycle=${cnt._1}\n" +
       p"\twen = $wen, addr = ${Hexadecimal(addr)}, wdata = ${Hexadecimal(wdata)}, " +
-      p"size = ${Hexadecimal(size)}, rdata_word = ${Hexadecimal(rdata_word)},  rdata = ${Hexadecimal(rdata)}\n" +
+      p"size = ${Hexadecimal(size)}, rdata_word = ${Hexadecimal(rword)},  rdata = ${Hexadecimal(rdata)}\n" +
       p"\t0($$0) = ${Hexadecimal(mem.read(0.U))}\n")
   }
 }
