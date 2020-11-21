@@ -13,4 +13,5 @@ class MWPort extends Bundle with HILO with HILOWen {
   val reg_waddr = UInt(5.W)
   val mem_rdata = UInt(32.W)
   val alu_out = UInt(32.W)
+  val c0_wen = Bool()
 }

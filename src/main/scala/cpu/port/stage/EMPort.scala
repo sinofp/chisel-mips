@@ -14,5 +14,6 @@ class EMPort extends Bundle with HILO with HILOWen {
   val sel_reg_wdata = UInt(SZ_SEL_REG_WDATA)
   val reg_waddr = UInt(5.W)
   val alu_out = UInt(32.W)
+  val c0_wen = Bool()
   val pcp8 = UInt(32.W)
 }

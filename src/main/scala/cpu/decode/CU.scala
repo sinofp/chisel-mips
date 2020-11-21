@@ -14,7 +14,6 @@ object CtrlSigDef {
   // Br
   val SZ_BR_TYPE = 3.W
   val BR_TYPE_NO = 0.U(SZ_BR_TYPE)
-  val BR_TYPE_X = BR_TYPE_NO
   val BR_TYPE_EQ = 1.U(SZ_BR_TYPE)
   val BR_TYPE_NE = 2.U(SZ_BR_TYPE)
   val BR_TYPE_GE = 3.U(SZ_BR_TYPE)
@@ -25,7 +24,6 @@ object CtrlSigDef {
   // Mem
   val SZ_MEM_TYPE = 3.W
   val MEM_W = 0.U(SZ_MEM_TYPE)
-  val MEM_X = MEM_W
   val MEM_H = 1.U(SZ_MEM_TYPE)
   val MEM_B = 2.U(SZ_MEM_TYPE)
   val MEM_HU = 3.U(SZ_MEM_TYPE) // 也可以拆成单独信号
@@ -48,13 +46,11 @@ object CtrlSigDef {
   val SZ_SEL_ALU1 = 1.W
   val SEL_ALU1_SA = 0.U(SZ_SEL_ALU1)
   val SEL_ALU1_RS = 1.U(SZ_SEL_ALU1)
-  val SEL_ALU1_X = SEL_ALU1_RS
 
   val SZ_SEL_ALU2 = 2.W
   val SEL_ALU2_IMM = 0.U(SZ_SEL_ALU2)
   val SEL_ALU2_RT = 1.U(SZ_SEL_ALU2)
   val SEL_ALU2_ZERO = 2.U(SZ_SEL_ALU2)
-  val SEL_ALU2_X = SEL_ALU2_RT
 
   val SZ_SEL_IMM = 3.W
   val SEL_IMM_U = 0.U(SZ_SEL_IMM)
@@ -63,22 +59,22 @@ object CtrlSigDef {
   val SEL_IMM_J = 3.U(SZ_SEL_IMM)
   val SEL_IMM_SH = 4.U(SZ_SEL_IMM)
   val SEL_IMM_LUI = 5.U(SZ_SEL_IMM)
-  val SEL_IMM_X = SEL_IMM_U
 
   val SZ_SEL_REG_WADDR = 2.W
   val SEL_REG_WADDR_RD = 0.U(SZ_SEL_REG_WADDR)
   val SEL_REG_WADDR_RT = 1.U(SZ_SEL_REG_WADDR)
   val SEL_REG_WADDR_31 = 2.U(SZ_SEL_REG_WADDR)
-  val SEL_REG_WADDR_X = SEL_REG_WADDR_RD
 
   val SZ_SEL_REG_WDATA = 3.W
-  val SEL_REG_WDATA_ALU = 0.U(SZ_SEL_REG_WDATA)
+  val SEL_REG_WDATA_EX = 0.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_MEM = 1.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_LNK = 2.U(SZ_SEL_REG_WDATA)
-  val SEL_REG_WDATA_HI = 3.U(SZ_SEL_REG_WDATA)
-  val SEL_REG_WDATA_LO = 4.U(SZ_SEL_REG_WDATA)
-  val SEL_REG_WDATA_C0 = 5.U(SZ_SEL_REG_WDATA)
-  val SEL_REG_WDATA_X = SEL_REG_WDATA_ALU
+
+  val SZ_SEL_MOVE = 2.W
+  val SEL_MOVE_NO = 0.U(SZ_SEL_MOVE)
+  val SEL_MOVE_HI = 1.U(SZ_SEL_MOVE)
+  val SEL_MOVE_LO = 2.U(SZ_SEL_MOVE)
+  val SEL_MOVE_C0 = 3.U(SZ_SEL_MOVE)
 }
 // @formatter:on
 
@@ -100,6 +96,7 @@ class CtrlSigs extends Bundle with HILOWen {
   val mem_size = UInt(SZ_MEM_TYPE)
   val load = Bool()
   val c0_wen = Bool()
+  val sel_move = UInt(SZ_SEL_MOVE)
 
   private implicit def uint2B(x: UInt): B = B(x)
 
@@ -166,20 +163,22 @@ class CtrlSigs extends Bundle with HILOWen {
     val decoder = DecodeLogic(inst, dft(), table)
     val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen,
       reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load,
-      hi_wen, lo_wen, c0_wen)
+      hi_wen, lo_wen, c0_wen, sel_move)
     sigs zip decoder foreach { case (s, d) => s := d }
     this
   }
 
-  private def r(alu_fn: B, alu_n: B = 0): List[B] = dft(alu_fn = alu_fn, alu_n = alu_n, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_ALU)
+  private def r(alu_fn: B, alu_n: B = 0): List[B] = dft(alu_fn = alu_fn, alu_n = alu_n, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_EX)
 
-  private def mf(hi: Boolean = false, lo: Boolean = false, c0: Boolean = false): List[B] = dft(reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = if (c0) SEL_REG_WDATA_C0 else if (hi) SEL_REG_WDATA_HI else SEL_REG_WDATA_LO)
+  private def mf(hi: Boolean = false, lo: Boolean = false, c0: Boolean = false): List[B] = dft(reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_EX, sel_move = if (c0) SEL_MOVE_C0 else {
+    if (hi) SEL_MOVE_HI else SEL_MOVE_LO
+  })
 
   private def mt(hi: Int = 0, lo: Int = 0, c0: Int = 0): List[B] = dft(hi_wen = hi, lo_wen = lo, c0_wen = c0)
 
-  private def dft(sel_alu1: B = SEL_ALU1_RS, sel_alu2: B = SEL_ALU2_RT, sel_imm: B = SEL_IMM_X, alu_fn: B = FN_X, mul: B = 0, div: B = 0, mem_wen: B = 0, reg_wen: B = 0, sel_reg_waddr: B = SEL_REG_WADDR_X, sel_reg_wdata: B = SEL_REG_WDATA_X, br_type: B = BR_TYPE_X, mem_size: B = MEM_X, load: B = 0, hi_wen: B = 0, lo_wen: B = 0, alu_n: B = 0, c0_wen: B = 0): List[B] = List(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen, c0_wen)
+  private def dft(sel_alu1: B = SEL_ALU1_RS, sel_alu2: B = SEL_ALU2_RT, sel_imm: B = SEL_IMM_U, alu_fn: B = FN_X, mul: B = 0, div: B = 0, mem_wen: B = 0, reg_wen: B = 0, sel_reg_waddr: B = SEL_REG_WADDR_RD, sel_reg_wdata: B = SEL_REG_WDATA_EX, br_type: B = BR_TYPE_NO, mem_size: B = MEM_W, load: B = 0, hi_wen: B = 0, lo_wen: B = 0, alu_n: B = 0, c0_wen: B = 0, sel_move: B = SEL_MOVE_NO): List[B] = List(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen, c0_wen, sel_move)
 
-  private def i(alu_fn: B, lui: Boolean = false): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = if (lui) SEL_IMM_LUI else SEL_IMM_S, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_ALU)
+  private def i(alu_fn: B, lui: Boolean = false): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = if (lui) SEL_IMM_LUI else SEL_IMM_S, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_EX)
 
   private def l(mem_size: B): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = SEL_IMM_S, alu_fn = FN_ADD, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_MEM, mem_size = mem_size, load = 1)
 
@@ -187,12 +186,13 @@ class CtrlSigs extends Bundle with HILOWen {
 
   private def s(mem_size: B): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = SEL_IMM_S, alu_fn = FN_ADD, mem_wen = 1, mem_size = mem_size)
 
-  private def sft(alu_fn: B, v: Boolean = false): List[B] = dft(sel_alu1 = if (v) SEL_ALU1_RS else SEL_ALU1_SA, sel_alu2 = SEL_IMM_SH, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_ALU)
+  private def sft(alu_fn: B, v: Boolean = false): List[B] = dft(sel_alu1 = if (v) SEL_ALU1_RS else SEL_ALU1_SA, sel_alu2 = SEL_IMM_SH, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_EX)
 
   private def b(br_type: B, link: Int = 0): List[B] = dft(sel_imm = SEL_IMM_B, alu_fn = FN_SLT, reg_wen = link, sel_reg_waddr = SEL_REG_WADDR_31, sel_reg_wdata = SEL_REG_WDATA_LNK, br_type = br_type)
 
-  private def j(r: Boolean = false, l: Int = 0): List[B] = dft(sel_alu1 = if (r) SEL_ALU1_SA else SEL_ALU1_X, sel_imm = SEL_IMM_J, reg_wen = l, sel_reg_waddr = SEL_REG_WADDR_31, sel_reg_wdata = SEL_REG_WDATA_LNK)
+  private def j(r: Boolean = false, l: Int = 0): List[B] = dft(sel_alu1 = if (r) SEL_ALU1_SA else SEL_ALU1_RS, sel_imm = SEL_IMM_J, reg_wen = l, sel_reg_waddr = SEL_REG_WADDR_31, sel_reg_wdata = SEL_REG_WDATA_LNK)
 }
+
 class CU(implicit c: Config = DefCon) extends MultiIOModule {
   val inst = IO(Input(UInt(32.W)))
   val ctrl = IO(Output(new CtrlSigs))

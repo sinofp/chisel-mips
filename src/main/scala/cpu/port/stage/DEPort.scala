@@ -3,7 +3,7 @@
 package cpu.port.stage
 
 import chisel3._
-import cpu.decode.CtrlSigDef.{SZ_BR_TYPE, SZ_MEM_TYPE, SZ_SEL_REG_WDATA}
+import cpu.decode.CtrlSigDef.{SZ_BR_TYPE, SZ_MEM_TYPE, SZ_SEL_MOVE, SZ_SEL_REG_WDATA}
 import cpu.execute.ALU.SZ_ALU_FN
 import cpu.port.HILOWen
 
@@ -23,4 +23,6 @@ class DEPort extends Bundle with HILOWen {
   val num2 = UInt(32.W)
   val reg_waddr = UInt(5.W)
   val mem_size = UInt(SZ_MEM_TYPE)
+  val c0_wen = Bool()
+  val sel_move = UInt(SZ_SEL_MOVE)
 }

@@ -24,11 +24,9 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   me.lo := mw.lo
   val md = IO(Output(new WdataPort))
   md.wdata := MuxCase(0.U, Array(
-    (mw.sel_reg_wdata === SEL_REG_WDATA_ALU) -> mw.alu_out,
+    (mw.sel_reg_wdata === SEL_REG_WDATA_EX) -> mw.alu_out,
     (mw.sel_reg_wdata === SEL_REG_WDATA_LNK) -> mw.pcp8,
     (mw.sel_reg_wdata === SEL_REG_WDATA_MEM) -> mw.mem_rdata,
-    (mw.sel_reg_wdata === SEL_REG_WDATA_HI) -> mw.hi,
-    (mw.sel_reg_wdata === SEL_REG_WDATA_LO) -> mw.lo,
   ))
 
   mw.pcp8 := RegNext(em.pcp8)
@@ -40,6 +38,7 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   mw.hi := RegNext(em.hi)
   mw.lo_wen := RegNext(em.lo_wen)
   mw.lo := RegNext(em.lo)
+  mw.c0_wen := RegNext(em.c0_wen)
 
   val data_mem = Module(new DataMem)
   locally {

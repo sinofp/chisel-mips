@@ -23,6 +23,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val hi = RegNext(mw.hi)
   val lo_wen = RegNext(mw.lo_wen)
   val lo = RegNext(mw.lo)
+  val c0_wen = RegNext(mw.c0_wen)
 
   val hilo = Module(new HILO)
   locally {
@@ -38,11 +39,9 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   wd.wdata := {
     val from = sel => sel_reg_wdata === sel
     MuxCase(0.U, Array(
-      from(SEL_REG_WDATA_ALU) -> alu_out,
+      from(SEL_REG_WDATA_EX) -> alu_out,
       from(SEL_REG_WDATA_LNK) -> pcp8,
       from(SEL_REG_WDATA_MEM) -> mem_rdata,
-      from(SEL_REG_WDATA_HI) -> hilo.io.hi,
-      from(SEL_REG_WDATA_LO) -> hilo.io.lo,
     ))
   }
   hw.wen := wd.wen

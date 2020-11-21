@@ -22,10 +22,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   he.lo_wen := em.lo_wen
   val ed = IO(Output(new WdataPort))
   ed.wdata := MuxCase(0.U, Array(
-    (em.sel_reg_wdata === SEL_REG_WDATA_ALU) -> em.alu_out,
+    (em.sel_reg_wdata === SEL_REG_WDATA_EX) -> em.alu_out,
     (em.sel_reg_wdata === SEL_REG_WDATA_LNK) -> em.pcp8,
-    (em.sel_reg_wdata === SEL_REG_WDATA_HI) -> em.hi,
-    (em.sel_reg_wdata === SEL_REG_WDATA_LO) -> em.lo,
   ))
   val me = IO(Input(new MEPort))
   val we = IO(Input(new WEPort))
@@ -44,6 +42,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   num2 := RegNext(Mux(he.stall, num2, de.num2))
   val br_t = Wire(UInt(SZ_BR_TYPE))
   br_t := RegNext(Mux(he.stall, br_t, Mux(he.flush, BR_TYPE_NO, de.br_type)))
+  val sel_move = Wire(UInt(SZ_SEL_MOVE))
+  sel_move := RegNext(Mux(he.stall, sel_move, de.sel_move))
 
   em.pcp8 := RegNext(Mux(he.stall, em.pcp8, de.pcp8))
   em.mem_wen := RegNext(Mux(he.stall, em.mem_wen, Mux(he.flush, 0.U, de.mem_wen)), 0.U)
@@ -55,6 +55,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   em.mem_size := RegNext(Mux(he.stall, em.mem_size, de.mem_size))
   em.hi_wen := RegNext(Mux(he.stall, em.hi_wen, de.hi_wen), 0.U)
   em.lo_wen := RegNext(Mux(he.stall, em.lo_wen, de.lo_wen), 0.U)
+  em.c0_wen := RegNext(Mux(he.stall, em.c0_wen, de.c0_wen), 0.U)
 
   val alu = Module(new ALU)
   locally {
@@ -62,7 +63,12 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     fn := alu_fn
     in1 := num1
     in2 := num2
-    em.alu_out := Mux(alu_n, ~out, out)
+    em.alu_out := MuxCase(out, Array(
+      alu_n -> ~out,
+      (sel_move === SEL_MOVE_HI) -> em.hi,
+      (sel_move === SEL_MOVE_LO) -> em.lo,
+      //      (sel_move == SEL_MOVE_C0)
+    ))
     cmp_out := DontCare
   }
   val adder_out = Wire(UInt(32.W))
