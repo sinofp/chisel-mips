@@ -44,6 +44,8 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
 
   execute.me <> memory.me
   execute.we <> writeback.we
+  execute.ew <> writeback.ew
+
   val t_regs = if (c.dTReg) Some(IO(Output(new TRegWindow()))) else None
   if (c.dTReg) {
     t_regs.get.getElements.foreach(_ := 1.U)

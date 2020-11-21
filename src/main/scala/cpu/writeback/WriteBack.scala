@@ -6,7 +6,7 @@ import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.WHPort
-import cpu.port.stage.{MWPort, WDPort, WEPort}
+import cpu.port.stage.{EWPort, MWPort, WDPort, WEPort}
 import cpu.util.{Config, DefCon}
 
 class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
@@ -24,6 +24,8 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val lo_wen = RegNext(mw.lo_wen)
   val lo = RegNext(mw.lo)
   val c0_wen = RegNext(mw.c0_wen)
+  val c0_waddr = RegNext(mw.c0_waddr)
+  val c0_wdata = RegNext(mw.c0_wdata)
 
   val hilo = Module(new HILO)
   locally {
@@ -48,7 +50,30 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   hw.waddr := wd.waddr
   hw.hi_wen := hi_wen
   hw.lo_wen := lo_wen
+  hw.c0_wen := c0_wen
+  hw.c0_waddr := c0_waddr
   val we = IO(Output(new WEPort))
   we.hi := hilo.io.hi
   we.lo := hilo.io.lo
+  we.c0_data := c0_wdata
+
+  val ew = IO(Flipped(new EWPort))
+  val cp0 = Module(new CP0)
+  locally {
+    import cp0.i._
+    import cp0.o._
+    wen := c0_wen
+    waddr := c0_waddr
+    wdata := c0_wdata
+    raddr := ew.c0_raddr
+    ew.c0_rdata := rdata
+    int := DontCare
+    BadVAddr := DontCare
+    Count := DontCare
+    Compare := DontCare
+    Status := DontCare
+    Cause := DontCare
+    EPC := DontCare
+    timer_int := DontCare
+  }
 }

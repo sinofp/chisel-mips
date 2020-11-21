@@ -52,6 +52,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val rt = inst(20, 16)
   val rd = inst(15, 11)
   val imm = inst(15, 0)
+  de.c0_addr := rd
 
   val reg_file = Module(new RegFile(readPorts))
   locally {

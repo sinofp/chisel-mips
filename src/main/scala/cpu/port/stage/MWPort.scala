@@ -4,14 +4,13 @@ package cpu.port.stage
 
 import chisel3._
 import cpu.decode.CtrlSigDef.SZ_SEL_REG_WDATA
-import cpu.port.{HILO, HILOWen}
+import cpu.port.{C0, HILO, HILOWen}
 
-class MWPort extends Bundle with HILO with HILOWen {
+class MWPort extends Bundle with HILO with HILOWen with C0 {
   val pcp8 = UInt(32.W)
   val reg_wen = Bool()
   val sel_reg_wdata = UInt(SZ_SEL_REG_WDATA)
   val reg_waddr = UInt(5.W)
   val mem_rdata = UInt(32.W)
   val alu_out = UInt(32.W)
-  val c0_wen = Bool()
 }

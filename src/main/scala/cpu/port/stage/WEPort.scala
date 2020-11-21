@@ -3,6 +3,6 @@
 package cpu.port.stage
 
 import chisel3._
-import cpu.port.HILO
+import cpu.port.{C0UN, HILO}
 
-class WEPort extends Bundle with HILO
+class WEPort extends Bundle with HILO with C0UN

@@ -91,7 +91,6 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
       is(CP0_EPC) -> EPC,
     ))
   }
-
 }
 
 object CP0 extends App {

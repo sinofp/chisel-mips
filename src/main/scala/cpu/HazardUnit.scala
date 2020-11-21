@@ -33,6 +33,12 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
     dh.forward(i) := forward_port(i)
   }
 
+  // cp0数据前推
+  eh.forward_c0 := MuxCase(FORWARD_C0_NO, Array(
+    (mh.c0_wen && mh.c0_waddr === eh.c0_raddr) -> FORWARD_C0_MEM,
+    (wh.c0_wen && wh.c0_waddr === eh.c0_raddr) -> FORWARD_C0_WB,
+  ))
+
   // HILO 数据前推到 Execute，主要为了 mfhi $1 后面的指令用到 $1
   eh.forward_hi := MuxCase(FORWARD_HILO_NO, Array(
     (mh.hi_wen && !eh.hi_wen) -> FORWARD_HILO_MEM,

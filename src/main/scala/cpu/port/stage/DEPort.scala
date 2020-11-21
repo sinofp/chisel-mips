@@ -24,5 +24,6 @@ class DEPort extends Bundle with HILOWen {
   val reg_waddr = UInt(5.W)
   val mem_size = UInt(SZ_MEM_TYPE)
   val c0_wen = Bool()
+  val c0_addr = UInt(5.W) // rd
   val sel_move = UInt(SZ_SEL_MOVE)
 }
