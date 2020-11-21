@@ -77,6 +77,7 @@ object CtrlSigDef {
   val SEL_REG_WDATA_LNK = 2.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_HI = 3.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_LO = 4.U(SZ_SEL_REG_WDATA)
+  val SEL_REG_WDATA_C0 = 5.U(SZ_SEL_REG_WDATA)
   val SEL_REG_WDATA_X = SEL_REG_WDATA_ALU
 }
 // @formatter:on
@@ -98,13 +99,11 @@ class CtrlSigs extends Bundle with HILOWen {
   val br_type = UInt(SZ_BR_TYPE)
   val mem_size = UInt(SZ_MEM_TYPE)
   val load = Bool()
-  // todo ...?
+  val c0_wen = Bool()
 
   private implicit def uint2B(x: UInt): B = B(x)
 
   private implicit def int2B(x: Int): B = B(x.U)
-
-  private val default: List[B] = d(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, FN_X, 0, 0, 0, 0, SEL_REG_WADDR_X, SEL_REG_WDATA_X, BR_TYPE_X, MEM_X, 0, 0, 0)
 
   private val table: Array[(B, List[B])] = Array(
     ADD -> r(FN_ADD),
@@ -146,10 +145,10 @@ class CtrlSigs extends Bundle with HILOWen {
     JR -> j(r = true),
     JAL -> j(l = 1),
     JALR -> j(r = true, 1),
-    MFHI -> mf(),
-    MFLO -> mf(false),
-    MTHI -> mt(),
-    MTLO -> mt(0),
+    MFHI -> mf(hi = true),
+    MFLO -> mf(lo = true),
+    MTHI -> mt(hi = 1),
+    MTLO -> mt(lo = 1),
     LB -> l(MEM_B),
     LBU -> l(MEM_BU),
     LH -> l(MEM_H),
@@ -158,39 +157,42 @@ class CtrlSigs extends Bundle with HILOWen {
     SB -> s(MEM_B),
     SH -> s(MEM_H),
     SW -> s(MEM_W),
+    // eret
+    MFC0 -> mf(c0 = true),
+    MTC0 -> mt(c0 = 1),
   )
 
-  private def r(alu_fn: B, alu_n: B = 0): List[B] = d(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_X, alu_fn, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0, alu_n)
-
-  private def mf(hi: Boolean = true): List[B] = d(SEL_ALU1_X, SEL_ALU2_X, SEL_IMM_X, FN_X, 0, 0, 0, 1, SEL_REG_WADDR_RD, if (hi) SEL_REG_WDATA_HI else SEL_REG_WDATA_LO, BR_TYPE_X, MEM_X, 0, 0, 0)
-
-  private def mt(hi: Int = 1): List[B] = d(SEL_ALU1_RS, SEL_ALU2_X, SEL_IMM_X, FN_X, 0, 0, 0, 0, SEL_REG_WADDR_X, SEL_REG_WDATA_X, BR_TYPE_X, MEM_X, 0, hi, 1 - hi)
-
-  private def i(alu_fn: B, lui: Boolean = false): List[B] = d(SEL_ALU1_RS, SEL_ALU2_IMM, if (lui) SEL_IMM_LUI else SEL_IMM_S, alu_fn, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0)
-
-  private def l(mem_size: B): List[B] = d(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_MEM, BR_TYPE_NO, mem_size, 1, 0, 0)
-
-  private def m(alu_fn: B, div: Int = 0, mul: Int = 0): List[B] = d(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, alu_fn, mul, div, 0, 1, SEL_REG_WADDR_RT, SEL_REG_WDATA_MEM, BR_TYPE_NO, MEM_X, 1, 0, 0)
-
-  private def d(sel_alu1: B, sel_alu2: B, sel_imm: B, alu_fn: B, mul: B, div: B, mem_wen: B, reg_wen: B, sel_reg_waddr: B, sel_reg_wdata: B, br_type: B, mem_size: B, load: B, hi_wen: B, lo_wen: B, alu_n: B = 0): List[B] = List(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen)
-
-  private def s(mem_size: B): List[B] = d(SEL_ALU1_RS, SEL_ALU2_IMM, SEL_IMM_S, FN_ADD, 0, 0, 1, 0, SEL_REG_WADDR_X, SEL_REG_WDATA_X, BR_TYPE_NO, mem_size, 0, 0, 0)
-
-  private def sft(alu_fn: B, v: Boolean = false): List[B] = d(if (v) SEL_ALU1_RS else SEL_ALU1_SA, SEL_ALU2_RT, SEL_IMM_SH, alu_fn, 0, 0, 0, 1, SEL_REG_WADDR_RD, SEL_REG_WDATA_ALU, BR_TYPE_X, MEM_X, 0, 0, 0)
-
-  private def b(br_type: B, link: Int = 0): List[B] = d(SEL_ALU1_RS, SEL_ALU2_RT, SEL_IMM_B, FN_SLT, 0, 0, 0, link, SEL_REG_WADDR_31, SEL_REG_WDATA_LNK, br_type, MEM_X, 0, 0, 0)
-
-  private def j(r: Boolean = false, l: Int = 0): List[B] = d(if (r) SEL_ALU1_SA else SEL_ALU1_X, SEL_ALU2_X, SEL_IMM_J, FN_X, 0, 0, 0, l, SEL_REG_WADDR_31, SEL_REG_WDATA_LNK, BR_TYPE_X, MEM_X, 0, 0, 0)
-
   def decode(inst: UInt): this.type = {
-    val decoder = DecodeLogic(inst, default, table)
+    val decoder = DecodeLogic(inst, dft(), table)
     val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen,
-      reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen)
+      reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load,
+      hi_wen, lo_wen, c0_wen)
     sigs zip decoder foreach { case (s, d) => s := d }
     this
   }
-}
 
+  private def r(alu_fn: B, alu_n: B = 0): List[B] = dft(alu_fn = alu_fn, alu_n = alu_n, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_ALU)
+
+  private def mf(hi: Boolean = false, lo: Boolean = false, c0: Boolean = false): List[B] = dft(reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = if (c0) SEL_REG_WDATA_C0 else if (hi) SEL_REG_WDATA_HI else SEL_REG_WDATA_LO)
+
+  private def mt(hi: Int = 0, lo: Int = 0, c0: Int = 0): List[B] = dft(hi_wen = hi, lo_wen = lo, c0_wen = c0)
+
+  private def dft(sel_alu1: B = SEL_ALU1_RS, sel_alu2: B = SEL_ALU2_RT, sel_imm: B = SEL_IMM_X, alu_fn: B = FN_X, mul: B = 0, div: B = 0, mem_wen: B = 0, reg_wen: B = 0, sel_reg_waddr: B = SEL_REG_WADDR_X, sel_reg_wdata: B = SEL_REG_WDATA_X, br_type: B = BR_TYPE_X, mem_size: B = MEM_X, load: B = 0, hi_wen: B = 0, lo_wen: B = 0, alu_n: B = 0, c0_wen: B = 0): List[B] = List(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen, c0_wen)
+
+  private def i(alu_fn: B, lui: Boolean = false): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = if (lui) SEL_IMM_LUI else SEL_IMM_S, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_ALU)
+
+  private def l(mem_size: B): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = SEL_IMM_S, alu_fn = FN_ADD, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_MEM, mem_size = mem_size, load = 1)
+
+  private def m(alu_fn: B, div: Int = 0, mul: Int = 0): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = SEL_IMM_S, alu_fn = alu_fn, mul = mul, div = div, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_MEM)
+
+  private def s(mem_size: B): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = SEL_IMM_S, alu_fn = FN_ADD, mem_wen = 1, mem_size = mem_size)
+
+  private def sft(alu_fn: B, v: Boolean = false): List[B] = dft(sel_alu1 = if (v) SEL_ALU1_RS else SEL_ALU1_SA, sel_alu2 = SEL_IMM_SH, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_ALU)
+
+  private def b(br_type: B, link: Int = 0): List[B] = dft(sel_imm = SEL_IMM_B, alu_fn = FN_SLT, reg_wen = link, sel_reg_waddr = SEL_REG_WADDR_31, sel_reg_wdata = SEL_REG_WDATA_LNK, br_type = br_type)
+
+  private def j(r: Boolean = false, l: Int = 0): List[B] = dft(sel_alu1 = if (r) SEL_ALU1_SA else SEL_ALU1_X, sel_imm = SEL_IMM_J, reg_wen = l, sel_reg_waddr = SEL_REG_WADDR_31, sel_reg_wdata = SEL_REG_WDATA_LNK)
+}
 class CU(implicit c: Config = DefCon) extends MultiIOModule {
   val inst = IO(Input(UInt(32.W)))
   val ctrl = IO(Output(new CtrlSigs))
