@@ -11,9 +11,9 @@ import cpu.port.stage._
 import cpu.util.{Config, DefCon}
 
 class Execute(implicit c: Config = DefCon) extends MultiIOModule {
-  val de = IO(Input(new DEPort))
-  val em = IO(Output(new EMPort))
-  val ef = IO(new EFPort)
+  val de = IO(Input(new Decode2Execute))
+  val em = IO(Output(new Execute2Memory))
+  val ef = IO(new Execute2Fetch)
   // forward
   val he = IO(Flipped(new EHPort))
   he.wen := em.reg_wen
@@ -25,9 +25,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     (em.sel_reg_wdata === SEL_REG_WDATA_EX) -> em.alu_out,
     (em.sel_reg_wdata === SEL_REG_WDATA_LNK) -> em.pcp8,
   ))
-  val me = IO(Input(new MEPort))
-  val we = IO(Input(new WEPort))
-  val ew = IO(new EWPort)
+  val me = IO(Input(new Memory2Execute))
+  val we = IO(new WriteBack2Execute)
 
   val cu_mul = Wire(Bool())
   cu_mul := RegNext(Mux(he.stall, cu_mul, de.mul))
@@ -60,9 +59,9 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   em.c0_wdata := num2 // $rt
   em.c0_waddr := RegNext(Mux(he.stall, em.c0_waddr, de.c0_addr))
 
-  ew.c0_raddr := em.c0_waddr // 都是rd
-  he.c0_raddr := ew.c0_raddr
-  val c0 = MuxCase(ew.c0_rdata, Array(
+  we.c0_raddr := em.c0_waddr // 都是rd
+  he.c0_raddr := we.c0_raddr
+  val c0 = MuxCase(we.c0_rdata, Array(
     (he.forward_c0 === FORWARD_C0_MEM) -> me.c0_data,
     (he.forward_c0 === FORWARD_HILO_WB) -> we.c0_data,
   ))

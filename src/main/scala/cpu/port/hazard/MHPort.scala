@@ -3,6 +3,12 @@
 package cpu.port.hazard
 
 import chisel3._
-import cpu.port.{C0WenWaddr, HILOWenIn, WenWaddr}
 
-class MHPort extends Bundle with WenWaddr with HILOWenIn with C0WenWaddr
+class MHPort extends Bundle {
+  val hi_wen = Input(Bool())
+  val lo_wen = Input(Bool())
+  val c0_wen = Input(Bool())
+  val c0_waddr = Input(UInt(5.W))
+  val wen = Input(Bool())
+  val waddr = Input(UInt(5.W))
+}

@@ -4,7 +4,7 @@ package cpu.port.stage
 
 import chisel3._
 
-class FDPort extends Bundle {
+class Fetch2Decode extends Bundle {
   val inst = UInt(32.W)
   val pcp4 = UInt(32.W)
 }

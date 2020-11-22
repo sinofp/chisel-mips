@@ -7,10 +7,9 @@ import chisel3.util.{BitPat => B}
 import cpu.decode.CtrlSigDef._
 import cpu.decode.Instructions._
 import cpu.execute.ALU._
-import cpu.port.HILOWen
 import cpu.util._
 
-class CtrlSigs extends Bundle with HILOWen {
+class CtrlSigs extends Bundle {
   val sel_alu1 = UInt(SZ_SEL_ALU1)
   val sel_alu2 = UInt(SZ_SEL_ALU2)
   val sel_imm = UInt(SZ_SEL_IMM)
@@ -25,6 +24,8 @@ class CtrlSigs extends Bundle with HILOWen {
   val br_type = UInt(SZ_BR_TYPE)
   val mem_size = UInt(SZ_MEM_TYPE)
   val load = Bool()
+  val hi_wen = Bool()
+  val lo_wen = Bool()
   val c0_wen = Bool()
   val sel_move = UInt(SZ_SEL_MOVE)
 

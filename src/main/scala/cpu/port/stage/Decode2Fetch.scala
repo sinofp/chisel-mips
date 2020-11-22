@@ -4,7 +4,7 @@ package cpu.port.stage
 
 import chisel3._
 
-class DFPort extends Bundle {
+class Decode2Fetch extends Bundle {
   val jump = Output(Bool())
   val j_addr = Output(UInt(32.W))
 }

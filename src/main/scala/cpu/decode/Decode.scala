@@ -6,14 +6,14 @@ import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.{DHPort, WdataPort}
-import cpu.port.stage.{DEPort, DFPort, FDPort, WDPort}
+import cpu.port.stage.{Decode2Execute, Decode2Fetch, Fetch2Decode, WriteBack2Decode}
 import cpu.util.{Config, DefCon}
 
 class Decode(implicit c: Config = DefCon) extends MultiIOModule {
-  val fd = IO(Input(new FDPort))
-  val de = IO(Output(new DEPort))
-  val df = IO(new DFPort)
-  val wd = IO(Input(new WDPort))
+  val fd = IO(Input(new Fetch2Decode))
+  val de = IO(Output(new Decode2Execute))
+  val df = IO(new Decode2Fetch)
+  val wd = IO(Input(new WriteBack2Decode))
   // forward
   val ed = IO(Input(new WdataPort))
   val md = IO(Input(new WdataPort))

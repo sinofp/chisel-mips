@@ -5,14 +5,14 @@ package cpu.fetch
 import chisel3._
 import chisel3.util.{Counter, MuxCase}
 import cpu.port.hazard.FHPort
-import cpu.port.stage.{DFPort, EFPort, FDPort}
+import cpu.port.stage.{Decode2Fetch, Execute2Fetch, Fetch2Decode}
 import cpu.util.{Config, DefCon}
 
 class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
   val debug = c.dFetch
-  val ef = IO(Flipped(new EFPort))
-  val df = IO(Flipped(new DFPort))
-  val fd = IO(Output(new FDPort))
+  val ef = IO(Flipped(new Execute2Fetch))
+  val df = IO(Flipped(new Decode2Fetch))
+  val fd = IO(Output(new Fetch2Decode))
   val hf = IO(Flipped(new FHPort))
 
   val pc_now = Wire(UInt(32.W))
