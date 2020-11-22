@@ -79,18 +79,15 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
     }
   }
 
-  o.rdata := {
-    // 直接写成regfile那样岂不是更方便？
-    val is = (a: UInt) => a === i.raddr
-    MuxCase(0.U, Array(
-      is(CP0_BADVADDR) -> BadVAddr,
-      is(CP0_COUNT) -> Count,
-      is(CP0_COMPARE) -> Compare,
-      is(CP0_STATUS) -> Status,
-      is(CP0_CAUSE) -> Cause,
-      is(CP0_EPC) -> EPC,
-    ))
-  }
+  // 直接写成regfile那样岂不是更方便？
+  o.rdata := MuxLookup(i.raddr, 0.U, Array(
+    CP0_BADVADDR -> BadVAddr,
+    CP0_COUNT -> Count,
+    CP0_COMPARE -> Compare,
+    CP0_STATUS -> Status,
+    CP0_CAUSE -> Cause,
+    CP0_EPC -> EPC,
+  ))
 }
 
 object CP0 extends App {

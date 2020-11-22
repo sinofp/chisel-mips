@@ -21,19 +21,19 @@ class DataMem(implicit c: Config = DefCon) extends Module {
   import io._
 
   when(wen) {
-    mem.write(addr, MuxCase(wdata, Array(
-      (size === MEM_H) -> Cat(Fill(16, wdata(15)), wdata(15, 0)),
-      (size === MEM_B) -> Cat(Fill(24, wdata(7)), wdata(7, 0)),
+    mem.write(addr, MuxLookup(size, wdata, Array(
+      MEM_H -> Cat(Fill(16, wdata(15)), wdata(15, 0)),
+      MEM_B -> Cat(Fill(24, wdata(7)), wdata(7, 0)),
     )))
   }
 
   val rword = mem.read(addr)
 
-  rdata := MuxCase(rword, Array(
-    (size === MEM_HU) -> Cat(Fill(16, 0.U), rword(15, 0)),
-    (size === MEM_H) -> Cat(Fill(16, rword(15)), rword(15, 0)),
-    (size === MEM_BU) -> Cat(Fill(24, 0.U), rword(7, 0)),
-    (size === MEM_B) -> Cat(Fill(24, rword(7)), rword(7, 0)),
+  rdata := MuxLookup(size, rword, Array(
+    MEM_HU -> Cat(Fill(16, 0.U), rword(15, 0)),
+    MEM_H -> Cat(Fill(16, rword(15)), rword(15, 0)),
+    MEM_BU -> Cat(Fill(24, 0.U), rword(7, 0)),
+    MEM_B -> Cat(Fill(24, rword(7)), rword(7, 0)),
   ))
 
   if (c.dDataMem) {

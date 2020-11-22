@@ -3,7 +3,7 @@
 package cpu.writeback
 
 import chisel3._
-import chisel3.util.MuxCase
+import chisel3.util.MuxLookup
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.WHPort
 import cpu.port.stage.{Memory2WriteBack, WriteBack2Decode, WriteBack2Execute}
@@ -38,14 +38,11 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
 
   wd.wen := RegNext(mw.reg_wen, false.B)
   wd.waddr := RegNext(mw.reg_waddr)
-  wd.wdata := {
-    val from = sel => sel_reg_wdata === sel
-    MuxCase(0.U, Array(
-      from(SEL_REG_WDATA_EX) -> alu_out,
-      from(SEL_REG_WDATA_LNK) -> pcp8,
-      from(SEL_REG_WDATA_MEM) -> mem_rdata,
-    ))
-  }
+  wd.wdata := MuxLookup(sel_reg_wdata, 0.U, Array(
+    SEL_REG_WDATA_EX -> alu_out,
+    SEL_REG_WDATA_LNK -> pcp8,
+    SEL_REG_WDATA_MEM -> mem_rdata,
+  ))
   hw.wen := wd.wen
   hw.waddr := wd.waddr
   hw.hi_wen := hi_wen
