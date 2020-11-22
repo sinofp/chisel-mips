@@ -3,7 +3,7 @@
 package cpu.execute
 
 import chisel3._
-import chisel3.util.{MuxCase, MuxLookup}
+import chisel3.util._
 import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU.{FN_DIV, FN_MULT, SZ_ALU_FN}
 import cpu.port.hazard.Execute2Hazard
@@ -26,6 +26,9 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val num2 = Wire(UInt(32.W))
   val br_t = Wire(UInt(SZ_BR_TYPE))
   val sel_move = Wire(UInt(SZ_SEL_MOVE))
+  val except_type = Wire(UInt(32.W))
+  val overflow = WireInit(Bool(), false.B)
+  val trap = WireInit(Bool(), false.B)
 
   // RegStallOrNext
   Seq(
@@ -36,13 +39,13 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     num1 -> decode.num1,
     num2 -> decode.num2,
     br_t -> Mux(hazard.flush, BR_TYPE_NO, decode.br_type),
+    fetch.br_addr -> decode.br_addr,
     sel_move -> decode.sel_move,
     memory.pcp8 -> decode.pcp8,
     memory.mem_wen -> Mux(hazard.flush, 0.U, decode.mem_wen),
     memory.reg_wen -> Mux(hazard.flush, 0.U, decode.reg_wen),
     memory.sel_reg_wdata -> decode.sel_reg_wdata,
     memory.reg_waddr -> decode.reg_waddr,
-    fetch.br_addr -> decode.br_addr,
     memory.mem_wdata -> decode.mem_wdata,
     memory.mem_size -> decode.mem_size,
     memory.hi_wen -> decode.hi_wen,
@@ -50,6 +53,9 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     memory.c0_wen -> decode.c0_wen,
     memory.c0_waddr -> decode.c0_addr,
     memory.c0_wdata -> num2,
+    memory.pc_now -> Mux(hazard.flush, 0.U, decode.pc_now),
+    memory.is_in_delayslot -> Mux(hazard.flush, false.B, br_t =/= BR_TYPE_NO), // todo J 的延迟槽
+    except_type -> Mux(hazard.flush, 0.U, decode.except_type),
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
 
   // alu
@@ -132,6 +138,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     (hazard.forward_lo === FORWARD_HILO_MEM) -> memory.lo_forward,
     (hazard.forward_lo === FORWARD_HILO_WB) -> writeback.lo,
   ))
+  memory.except_type := Cat(except_type(31, 12), overflow, trap, except_type(9, 0))
+  // todo overflow
 
   // debug
   if (c.dExecute) {

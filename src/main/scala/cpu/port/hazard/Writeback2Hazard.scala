@@ -4,7 +4,7 @@ package cpu.port.hazard
 
 import chisel3._
 
-class Writeback2Hazard extends Bundle {
+class Writeback2Hazard extends Bundle with Flush {
   val wen = Input(Bool())
   val waddr = Input(UInt(5.W))
   val hi_wen = Input(Bool())

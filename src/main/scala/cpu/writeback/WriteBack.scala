@@ -30,6 +30,10 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val c0_wen = RegNext(memory.c0_wen)
   val c0_waddr = RegNext(memory.c0_waddr)
   val c0_wdata = RegNext(memory.c0_wdata)
+  // 这些也要RegNext么？
+  val except_type = RegNext(memory.except_type)
+  val pc_now = RegNext(memory.pc_now)
+  val is_in_delayslot = RegNext(memory.is_in_delayslot)
 
   // hilo
   val hilo = Module(new HILO)
@@ -44,6 +48,9 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   // cp0
   val cp0 = Module(new CP0)
   locally {
+    cp0.i.except_type := except_type
+    cp0.i.pc_now := pc_now
+    cp0.i.is_in_delayslot := is_in_delayslot
     import cp0.i._
     import cp0.o._
     wen := c0_wen
@@ -55,9 +62,9 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     BadVAddr := DontCare
     Count := DontCare
     Compare := DontCare
-    Status := DontCare
-    Cause := DontCare
-    EPC := DontCare
+    memory.c0_status := Status
+    memory.c0_cause := Cause
+    memory.c0_epc := EPC
     core.timer_int := timer_int
   }
 
@@ -78,8 +85,12 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   hazard.lo_wen := lo_wen
   execute.hi := hilo.io.hi
   execute.lo := hilo.io.lo
-  // forward c0
+  // forward c0 to execute
   hazard.c0_wen := c0_wen
   hazard.c0_waddr := c0_waddr
   execute.c0_data := c0_wdata
+  // forward c0 to memory
+  memory.c0_wen_f := c0_wen
+  memory.c0_waddr_f := c0_waddr
+  memory.c0_wdata_f := c0_wdata
 }

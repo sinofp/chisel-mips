@@ -44,6 +44,9 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val sel_alu2 = cu.ctrl.sel_alu2
   val sel_imm = cu.ctrl.sel_imm
   val sel_reg_waddr = cu.ctrl.sel_reg_waddr
+  val inst_invalid = cu.ctrl.inst_invalid
+  val is_eret = cu.ctrl.is_eret
+  val is_syscall = cu.ctrl.is_syscall
 
   // inst part
   val rs = inst(25, 21)
@@ -102,4 +105,6 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
     SEL_REG_WADDR_RT -> rt,
     SEL_REG_WADDR_31 -> 31.U,
   ))
+  execute.except_type := Cat(0.U(19.W), is_eret, 0.U(2.W), ~inst_invalid, is_syscall, 0.U(8.W))
+  execute.pc_now := pcp4 - 4.U // todo
 }
