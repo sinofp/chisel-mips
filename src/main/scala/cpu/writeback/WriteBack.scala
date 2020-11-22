@@ -10,10 +10,12 @@ import cpu.port.stage.{Memory2WriteBack, WriteBack2Decode, WriteBack2Execute}
 import cpu.util.{Config, DefCon}
 
 class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
-  val memory = IO(Flipped(new Memory2WriteBack))
   val decode = IO(Flipped(new WriteBack2Decode))
+  val execute = IO(Flipped(new WriteBack2Execute))
+  val memory = IO(Flipped(new Memory2WriteBack))
   val hazard = IO(Flipped(new Writeback2Hazard))
 
+  // RegNext
   val pcp8 = RegNext(memory.pcp8)
   val pc = pcp8 - 8.U
   val sel_reg_wdata = RegNext(memory.sel_reg_wdata)
@@ -27,6 +29,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val c0_waddr = RegNext(memory.c0_waddr)
   val c0_wdata = RegNext(memory.c0_wdata)
 
+  // hilo
   val hilo = Module(new HILO)
   locally {
     import hilo.{io => hl}
@@ -36,24 +39,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     hl._lo := lo
   }
 
-  decode.wen := RegNext(memory.reg_wen, false.B)
-  decode.waddr := RegNext(memory.reg_waddr)
-  decode.wdata := MuxLookup(sel_reg_wdata, 0.U, Array(
-    SEL_REG_WDATA_EX -> alu_out,
-    SEL_REG_WDATA_LNK -> pcp8,
-    SEL_REG_WDATA_MEM -> mem_rdata,
-  ))
-  hazard.wen := decode.wen
-  hazard.waddr := decode.waddr
-  hazard.hi_wen := hi_wen
-  hazard.lo_wen := lo_wen
-  hazard.c0_wen := c0_wen
-  hazard.c0_waddr := c0_waddr
-  val execute = IO(Flipped(new WriteBack2Execute))
-  execute.hi := hilo.io.hi
-  execute.lo := hilo.io.lo
-  execute.c0_data := c0_wdata
-
+  // cp0
   val cp0 = Module(new CP0)
   locally {
     import cp0.i._
@@ -72,4 +58,26 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     EPC := DontCare
     timer_int := DontCare
   }
+
+  // write rf (& forward reg)
+  decode.wen := RegNext(memory.reg_wen, false.B)
+  decode.waddr := RegNext(memory.reg_waddr)
+  decode.wdata := MuxLookup(sel_reg_wdata, 0.U, Array(
+    SEL_REG_WDATA_EX -> alu_out,
+    SEL_REG_WDATA_LNK -> pcp8,
+    SEL_REG_WDATA_MEM -> mem_rdata,
+  ))
+
+  // forward reg
+  hazard.wen := decode.wen
+  hazard.waddr := decode.waddr
+  // forward hilo
+  hazard.hi_wen := hi_wen
+  hazard.lo_wen := lo_wen
+  execute.hi := hilo.io.hi
+  execute.lo := hilo.io.lo
+  // forward c0
+  hazard.c0_wen := c0_wen
+  hazard.c0_waddr := c0_waddr
+  execute.c0_data := c0_wdata
 }

@@ -28,7 +28,7 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   fetch.decode <> decode.fetch
   junk_output := decode.fetch.jump
 
-  decode.writeback <> writeback.decode
+  decode.writeBack <> writeback.decode
   decode.memory <> memory.decode
   execute.decode <> decode.execute
   execute.memory <> memory.execute

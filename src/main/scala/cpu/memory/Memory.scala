@@ -10,28 +10,12 @@ import cpu.port.stage.{Decode2Memory, Execute2Memory, Memory2WriteBack}
 import cpu.util.{Config, DefCon}
 
 class Memory(implicit c: Config = DefCon) extends MultiIOModule {
+  val decode = IO(Flipped(new Decode2Memory))
   val execute = IO(new Execute2Memory)
   val writeback = IO(new Memory2WriteBack)
-  // forward
   val hazard = IO(Flipped(new Memory2Hazard))
-  hazard.wen := writeback.reg_wen
-  hazard.waddr := writeback.reg_waddr
-  // forward hilo
-  hazard.hi_wen := writeback.hi_wen
-  hazard.lo_wen := writeback.lo_wen
-  // forward cp0
-  hazard.c0_wen := writeback.c0_waddr
-  hazard.c0_waddr := writeback.c0_waddr
-  execute.hi_forward := writeback.hi
-  execute.lo_forward := writeback.lo
-  execute.c0_data := writeback.c0_wdata
-  val decode = IO(Flipped(new Decode2Memory))
-  decode.wdata := MuxCase(0.U, Array(
-    (writeback.sel_reg_wdata === SEL_REG_WDATA_EX) -> writeback.alu_out,
-    (writeback.sel_reg_wdata === SEL_REG_WDATA_LNK) -> writeback.pcp8,
-    (writeback.sel_reg_wdata === SEL_REG_WDATA_MEM) -> writeback.mem_rdata,
-  ))
 
+  // RegNext
   writeback.pcp8 := RegNext(execute.pcp8)
   writeback.reg_wen := RegNext(execute.reg_wen, 0.U)
   writeback.sel_reg_wdata := RegNext(execute.sel_reg_wdata)
@@ -45,6 +29,7 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   writeback.c0_waddr := RegNext(execute.c0_waddr)
   writeback.c0_wdata := RegNext(execute.c0_wdata)
 
+  // data mem
   val data_mem = Module(new DataMem)
   locally {
     import data_mem.io._
@@ -54,4 +39,22 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
     writeback.mem_rdata := rdata
     size := execute.mem_size
   }
+
+  // forward reg
+  hazard.wen := writeback.reg_wen
+  hazard.waddr := writeback.reg_waddr
+  // forward hilo
+  hazard.hi_wen := writeback.hi_wen
+  hazard.lo_wen := writeback.lo_wen
+  // forward cp0
+  hazard.c0_wen := writeback.c0_waddr
+  hazard.c0_waddr := writeback.c0_waddr
+  execute.hi_forward := writeback.hi
+  execute.lo_forward := writeback.lo
+  execute.c0_data := writeback.c0_wdata
+  decode.wdata := MuxCase(0.U, Array(
+    (writeback.sel_reg_wdata === SEL_REG_WDATA_EX) -> writeback.alu_out,
+    (writeback.sel_reg_wdata === SEL_REG_WDATA_LNK) -> writeback.pcp8,
+    (writeback.sel_reg_wdata === SEL_REG_WDATA_MEM) -> writeback.mem_rdata,
+  ))
 }

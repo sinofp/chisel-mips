@@ -11,21 +11,13 @@ import cpu.port.stage._
 import cpu.util.{Config, DefCon}
 
 class Execute(implicit c: Config = DefCon) extends MultiIOModule {
+  val fetch = IO(new Execute2Fetch)
   val decode = IO(Flipped(new Decode2Execute))
   val memory = IO(Flipped(new Execute2Memory))
-  val fetch = IO(new Execute2Fetch)
-  // forward
-  val hazard = IO(Flipped(new Execute2Hazard))
-  hazard.wen := memory.reg_wen
-  hazard.waddr := memory.reg_waddr
-  hazard.hi_wen := memory.hi_wen
-  hazard.lo_wen := memory.lo_wen
-  decode.wdata := MuxLookup(memory.sel_reg_wdata, 0.U, Array(
-    SEL_REG_WDATA_EX -> memory.alu_out,
-    SEL_REG_WDATA_LNK -> memory.pcp8,
-  ))
   val writeback = IO(new WriteBack2Execute)
+  val hazard = IO(Flipped(new Execute2Hazard))
 
+  // 用lazy val在定义中RegStallOrNext自己？
   val cu_mul = Wire(Bool())
   val cu_div = Wire(Bool())
   val alu_fn = Wire(UInt(SZ_ALU_FN))
@@ -60,13 +52,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     memory.c0_wdata -> num2,
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
 
-  writeback.c0_raddr := memory.c0_waddr // 都是rd
-  hazard.c0_raddr := writeback.c0_raddr
-  val c0 = MuxCase(writeback.c0_rdata, Array(
-    (hazard.forward_c0 === FORWARD_C0_MEM) -> memory.c0_data,
-    (hazard.forward_c0 === FORWARD_HILO_WB) -> writeback.c0_data,
-  ))
-
+  // alu
   val alu = Module(new ALU)
   locally {
     import alu.io._
@@ -84,6 +70,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val adder_out = Wire(UInt(32.W))
   adder_out := alu.io.adder_out
 
+  // div
   val div = Module(new Div)
   locally {
     import div.io._
@@ -94,6 +81,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     hazard.div_not_ready := cu_div && !ready
   }
 
+  // mul
   val mul = Module(new Mul)
   locally {
     import mul.io._
@@ -102,6 +90,36 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     sign := alu_fn === FN_MULT
   }
 
+  // br
+  val br_unit = Module(new BrUnit)
+  br_unit.io.num1 := num1
+  br_unit.io.num2 := num2
+  locally {
+    import br_unit.io._
+    slt_res := alu.io.out
+    br_type := br_t
+    fetch.branch := branch
+  }
+  hazard.branch := fetch.branch
+
+  // forward
+  hazard.wen := memory.reg_wen
+  hazard.waddr := memory.reg_waddr
+  hazard.hi_wen := memory.hi_wen
+  hazard.lo_wen := memory.lo_wen
+  decode.wdata := MuxLookup(memory.sel_reg_wdata, 0.U, Array(
+    SEL_REG_WDATA_EX -> memory.alu_out,
+    SEL_REG_WDATA_LNK -> memory.pcp8,
+  ))
+  writeback.c0_raddr := memory.c0_waddr // 都是rd
+  hazard.c0_raddr := writeback.c0_raddr
+
+  def c0 = MuxCase(writeback.c0_rdata, Array(
+    (hazard.forward_c0 === FORWARD_C0_MEM) -> memory.c0_data,
+    (hazard.forward_c0 === FORWARD_HILO_WB) -> writeback.c0_data,
+  ))
+
+  // misc output
   memory.hi := MuxCase(num1, Array( // 默认num1是mthi, rs读出来的值 -- 要加上em.hi_wen做条件限定么？
     cu_div -> div.io.quotient,
     cu_mul -> mul.io.product(63, 32),
@@ -115,21 +133,11 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     (hazard.forward_lo === FORWARD_HILO_WB) -> writeback.lo,
   ))
 
+  // debug
   if (c.dExecute) {
     printf(p"[log execute]\n\tin1 = ${Hexadecimal(decode.num1)}, in2 = ${Hexadecimal(decode.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")
   }
   if (c.dBrUnit) {
     printf(p"[log execute]\n\tbranch = ${fetch.branch}, br_addr >> 2 = ${fetch.br_addr / 4.U}\n")
   }
-
-  val br_unit = Module(new BrUnit)
-  br_unit.io.num1 := num1
-  br_unit.io.num2 := num2
-  locally {
-    import br_unit.io._
-    slt_res := alu.io.out
-    br_type := br_t
-    fetch.branch := branch
-  }
-  hazard.branch := fetch.branch
 }
