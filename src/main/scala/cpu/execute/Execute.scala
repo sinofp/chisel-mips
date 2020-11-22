@@ -27,35 +27,38 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val writeback = IO(new WriteBack2Execute)
 
   val cu_mul = Wire(Bool())
-  cu_mul := RegNext(Mux(hazard.stall, cu_mul, decode.mul))
   val cu_div = Wire(Bool())
-  cu_div := RegNext(Mux(hazard.stall, cu_div, decode.div))
   val alu_fn = Wire(UInt(SZ_ALU_FN))
-  alu_fn := RegNext(Mux(hazard.stall, alu_fn, decode.alu_fn))
   val alu_n = Wire(Bool())
-  alu_n := RegNext(Mux(hazard.stall, alu_n, decode.alu_n))
   val num1 = Wire(UInt(32.W))
-  num1 := RegNext(Mux(hazard.stall, num1, decode.num1))
   val num2 = Wire(UInt(32.W))
-  num2 := RegNext(Mux(hazard.stall, num2, decode.num2))
   val br_t = Wire(UInt(SZ_BR_TYPE))
-  br_t := RegNext(Mux(hazard.stall, br_t, Mux(hazard.flush, BR_TYPE_NO, decode.br_type)))
   val sel_move = Wire(UInt(SZ_SEL_MOVE))
-  sel_move := RegNext(Mux(hazard.stall, sel_move, decode.sel_move))
 
-  memory.pcp8 := RegNext(Mux(hazard.stall, memory.pcp8, decode.pcp8))
-  memory.mem_wen := RegNext(Mux(hazard.stall, memory.mem_wen, Mux(hazard.flush, 0.U, decode.mem_wen)), 0.U)
-  memory.reg_wen := RegNext(Mux(hazard.stall, memory.reg_wen, Mux(hazard.flush, 0.U, decode.reg_wen)), 0.U)
-  memory.sel_reg_wdata := RegNext(Mux(hazard.stall, memory.sel_reg_wdata, decode.sel_reg_wdata), 0.U)
-  memory.reg_waddr := RegNext(Mux(hazard.stall, memory.reg_waddr, decode.reg_waddr), 0.U)
-  fetch.br_addr := RegNext(Mux(hazard.stall, fetch.br_addr, decode.br_addr))
-  memory.mem_wdata := RegNext(Mux(hazard.stall, memory.mem_wdata, decode.mem_wdata))
-  memory.mem_size := RegNext(Mux(hazard.stall, memory.mem_size, decode.mem_size))
-  memory.hi_wen := RegNext(Mux(hazard.stall, memory.hi_wen, decode.hi_wen), 0.U)
-  memory.lo_wen := RegNext(Mux(hazard.stall, memory.lo_wen, decode.lo_wen), 0.U)
-  memory.c0_wen := RegNext(Mux(hazard.stall, memory.c0_wen, decode.c0_wen), 0.U)
-  memory.c0_wdata := num2 // $rt
-  memory.c0_waddr := RegNext(Mux(hazard.stall, memory.c0_waddr, decode.c0_addr))
+  // RegStallOrNext
+  Seq(
+    cu_mul -> decode.mul,
+    cu_div -> decode.div,
+    alu_fn -> decode.alu_fn,
+    alu_n -> decode.alu_n,
+    num1 -> decode.num1,
+    num2 -> decode.num2,
+    br_t -> Mux(hazard.flush, BR_TYPE_NO, decode.br_type),
+    sel_move -> decode.sel_move,
+    memory.pcp8 -> decode.pcp8,
+    memory.mem_wen -> Mux(hazard.flush, 0.U, decode.mem_wen),
+    memory.reg_wen -> Mux(hazard.flush, 0.U, decode.reg_wen),
+    memory.sel_reg_wdata -> decode.sel_reg_wdata,
+    memory.reg_waddr -> decode.reg_waddr,
+    fetch.br_addr -> decode.br_addr,
+    memory.mem_wdata -> decode.mem_wdata,
+    memory.mem_size -> decode.mem_size,
+    memory.hi_wen -> decode.hi_wen,
+    memory.lo_wen -> decode.lo_wen,
+    memory.c0_wen -> decode.c0_wen,
+    memory.c0_waddr -> decode.c0_addr,
+    memory.c0_wdata -> num2,
+  ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
 
   writeback.c0_raddr := memory.c0_waddr // 都是rd
   hazard.c0_raddr := writeback.c0_raddr
