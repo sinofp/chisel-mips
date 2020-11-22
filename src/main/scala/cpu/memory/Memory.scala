@@ -76,11 +76,13 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   // exception
   writeback.except_type := MuxCase(0.U, Array(
     (writeback.pc_now === 0.U) -> 0.U,
-    (((Cause(15, 8) & Status(15, 8)) =/= 0.U) && Status(1, 0) === 1.U) -> 1.U, // int
-    except_type(8).asBool -> 8.U, // syscall
-    except_type(9).asBool -> 0xa.U, // inst_invalid
-    except_type(10).asBool -> 0xd.U, // trap
-    except_type(11).asBool -> 0xc.U, // overflow
-    except_type(12).asBool -> 0xe.U, // eret
+    (((Cause(15, 8) & Status(15, 8)) =/= 0.U) && Status(1, 0) === 1.U) -> EXCEPT_INT,
+    except_type(8).asBool -> EXCEPT_SYSCALL,
+    except_type(9).asBool -> EXCEPT_INST_INVALID,
+    except_type(10).asBool -> EXCEPT_TRAP,
+    except_type(11).asBool -> EXCEPT_OVERFLOW,
+    except_type(12).asBool -> EXCEPT_ERET,
   ))
+  hazard.EPC := EPC
+  hazard.except_type := writeback.except_type
 }

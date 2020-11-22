@@ -16,6 +16,7 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
   // next pc
   val pc_now = Wire(UInt(32.W))
   val pc_next = MuxCase(decode.pcp4, Array(
+    hazard.estart -> hazard.newpc,
     hazard.stall -> pc_now,
     decode.jump -> decode.j_addr,
     execute.branch -> execute.br_addr

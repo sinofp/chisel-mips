@@ -4,6 +4,7 @@ package cpu.port.stage
 
 import chisel3._
 import cpu.decode.CtrlSigDef.SZ_SEL_REG_WDATA
+import cpu.writeback.CP0.SZ_EXCEPT_TYPE
 
 class Memory2WriteBack extends Bundle {
   val pcp8 = Output(UInt(32.W))
@@ -19,7 +20,7 @@ class Memory2WriteBack extends Bundle {
   val c0_wen = Output(Bool())
   val c0_waddr = Output(UInt(5.W))
   val c0_wdata = Output(UInt(32.W))
-  val except_type = Output(UInt(32.W))
+  val except_type = Output(UInt(SZ_EXCEPT_TYPE))
   val pc_now = Output(UInt(32.W))
   val is_in_delayslot = Output(Bool())
   val c0_epc = Input(UInt(32.W))

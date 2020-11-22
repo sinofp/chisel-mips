@@ -3,10 +3,11 @@
 package cpu
 
 import chisel3._
-import chisel3.util.{Counter, MuxCase}
+import chisel3.util.{Counter, MuxCase, MuxLookup}
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard._
 import cpu.util.{Config, DefCon}
+import cpu.writeback.CP0._
 
 class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {
   require(readPorts >= 0)
@@ -58,10 +59,10 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // c3 时发生 load stall, c4 时 fetch 应该还是 f2, decode 应该还是 d2, execute 以及其后应该被冲刷
   // 所以 c3 时 fetch, decode, execute 应该分别保留 pc_now, 保留 inst, 下周期输出 mem/reg_wen 为 0, br_type 为 no
   val load_stall = decode.forward.exists((_: UInt) === FORWARD_EXE) && decode.prev_load
-  fetch.stall := load_stall || execute.div_not_ready
-  decode.stall := load_stall || execute.div_not_ready
-  execute.flush := load_stall
-  execute.stall := execute.div_not_ready
+  fetch.stall := (load_stall || execute.div_not_ready) && !fetch.estart
+  decode.stall := (load_stall || execute.div_not_ready) && !fetch.estart
+  execute.flush := load_stall || fetch.estart
+  execute.stall := execute.div_not_ready && !fetch.estart
 
   //                        ↓ branch flush
   // cycle         : c1 c2 c3 c4 c5
@@ -71,5 +72,18 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // target        :          f4 d4 e4 m4 w4
   // 在 c3, execute 中的 br_unit 判断出要 branch
   // c4 时, fetch 照样刷新, 但 decode 要关掉各种副作用
-  decode.flush := execute.branch
+  decode.flush := execute.branch || fetch.estart
+
+  // exception
+  fetch.estart := memory.except_type =/= 0.U
+  fetch.newpc := MuxLookup(memory.except_type, 0.U, Array(
+    EXCEPT_INT -> "h20".U,
+    EXCEPT_SYSCALL -> "h40".U,
+    EXCEPT_INST_INVALID -> "h40".U,
+    EXCEPT_TRAP -> "h40".U,
+    EXCEPT_OVERFLOW -> "h40".U,
+    EXCEPT_ERET -> memory.EPC,
+  ))
+  memory.flush := fetch.estart
+  writeback.flush := fetch.estart
 }

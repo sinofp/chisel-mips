@@ -35,6 +35,13 @@ object CP0 {
   val CP0_STATUS = 12.U
   val CP0_CAUSE = 13.U
   val CP0_EPC = 14.U
+  val SZ_EXCEPT_TYPE = 32.W
+  val EXCEPT_INT = 1.U(SZ_EXCEPT_TYPE)
+  val EXCEPT_SYSCALL = 8.U(SZ_EXCEPT_TYPE)
+  val EXCEPT_INST_INVALID = 0xa.U(SZ_EXCEPT_TYPE)
+  val EXCEPT_TRAP = 0xd.U(SZ_EXCEPT_TYPE)
+  val EXCEPT_OVERFLOW = 0xc.U(SZ_EXCEPT_TYPE)
+  val EXCEPT_ERET = 0xe.U(SZ_EXCEPT_TYPE)
 }
 
 import cpu.writeback.CP0._
@@ -109,13 +116,13 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
   }
 
   switch(except_type) {
-    is(1.U) {
+    is(EXCEPT_INT) {
       EPC := pc_now - Mux(is_in_delayslot, 4.U, 0.U)
       Cause.BD := is_in_delayslot
       Status.EXL := 1.U
       Cause.ExcCode := 0.U
     }
-    is(8.U) {
+    is(EXCEPT_SYSCALL) {
       when(Status.EXL === 0.U) {
         EPC := pc_now - Mux(is_in_delayslot, 4.U, 0.U)
         Cause.BD := is_in_delayslot
@@ -123,7 +130,7 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
         Cause.ExcCode := "b01000".U
       }
     }
-    is(0xa.U) {
+    is(EXCEPT_INST_INVALID) {
       when(Status.EXL === 0.U) {
         EPC := pc_now - Mux(is_in_delayslot, 4.U, 0.U)
         Cause.BD := is_in_delayslot
@@ -131,7 +138,7 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
         Cause.ExcCode := "b01010".U
       }
     }
-    is(0xd.U) {
+    is(EXCEPT_TRAP) {
       when(Status.EXL === 0.U) {
         EPC := pc_now - Mux(is_in_delayslot, 4.U, 0.U)
         Cause.BD := is_in_delayslot
@@ -139,7 +146,7 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
         Cause.ExcCode := "b01101".U
       }
     }
-    is(0xc.U) {
+    is(EXCEPT_OVERFLOW) {
       when(Status.EXL === 0.U) {
         EPC := pc_now - Mux(is_in_delayslot, 4.U, 0.U)
         Cause.BD := is_in_delayslot
@@ -147,7 +154,7 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
         Cause.ExcCode := "b01100".U
       }
     }
-    is(0xe.U) {
+    is(EXCEPT_ERET) {
       Status.EXL := 0.U
     }
   }

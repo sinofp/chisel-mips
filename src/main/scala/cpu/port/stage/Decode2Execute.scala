@@ -5,6 +5,7 @@ package cpu.port.stage
 import chisel3._
 import cpu.decode.CtrlSigDef.{SZ_BR_TYPE, SZ_MEM_TYPE, SZ_SEL_MOVE, SZ_SEL_REG_WDATA}
 import cpu.execute.ALU.SZ_ALU_FN
+import cpu.writeback.CP0.SZ_EXCEPT_TYPE
 
 class Decode2Execute extends Bundle {
   val pcp8 = Output(UInt(32.W))
@@ -27,7 +28,7 @@ class Decode2Execute extends Bundle {
   val sel_move = Output(UInt(SZ_SEL_MOVE))
   val hi_wen = Output(Bool())
   val lo_wen = Output(Bool())
-  val except_type = Output(UInt(32.W))
+  val except_type = Output(UInt(SZ_EXCEPT_TYPE))
   val pc_now = Output(UInt(32.W))
   val wdata = Input(UInt(32.W))
 }
