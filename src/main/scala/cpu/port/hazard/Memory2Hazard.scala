@@ -4,11 +4,11 @@ package cpu.port.hazard
 
 import chisel3._
 
-class WHPort extends Bundle {
-  val wen = Input(Bool())
-  val waddr = Input(UInt(5.W))
+class Memory2Hazard extends Bundle {
   val hi_wen = Input(Bool())
   val lo_wen = Input(Bool())
   val c0_wen = Input(Bool())
   val c0_waddr = Input(UInt(5.W))
+  val wen = Input(Bool())
+  val waddr = Input(UInt(5.W))
 }

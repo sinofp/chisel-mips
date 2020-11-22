@@ -5,54 +5,53 @@ package cpu.memory
 import chisel3._
 import chisel3.util.MuxCase
 import cpu.decode.CtrlSigDef._
-import cpu.port.hazard.{MHPort, WdataPort}
-import cpu.port.stage.{Execute2Memory, Memory2Execute, Memory2WriteBack}
+import cpu.port.hazard.Memory2Hazard
+import cpu.port.stage.{Decode2Memory, Execute2Memory, Memory2WriteBack}
 import cpu.util.{Config, DefCon}
 
 class Memory(implicit c: Config = DefCon) extends MultiIOModule {
-  val em = IO(Input(new Execute2Memory))
-  val mw = IO(Output(new Memory2WriteBack))
+  val execute = IO(new Execute2Memory)
+  val writeback = IO(new Memory2WriteBack)
   // forward
-  val hm = IO(Flipped(new MHPort))
-  hm.wen := mw.reg_wen
-  hm.waddr := mw.reg_waddr
+  val hazard = IO(Flipped(new Memory2Hazard))
+  hazard.wen := writeback.reg_wen
+  hazard.waddr := writeback.reg_waddr
   // forward hilo
-  hm.hi_wen := mw.hi_wen
-  hm.lo_wen := mw.lo_wen
+  hazard.hi_wen := writeback.hi_wen
+  hazard.lo_wen := writeback.lo_wen
   // forward cp0
-  hm.c0_wen := mw.c0_waddr
-  hm.c0_waddr := mw.c0_waddr
-  val me = IO(Output(new Memory2Execute))
-  me.hi := mw.hi
-  me.lo := mw.lo
-  me.c0_data := mw.c0_wdata
-  val md = IO(Output(new WdataPort))
-  md.wdata := MuxCase(0.U, Array(
-    (mw.sel_reg_wdata === SEL_REG_WDATA_EX) -> mw.alu_out,
-    (mw.sel_reg_wdata === SEL_REG_WDATA_LNK) -> mw.pcp8,
-    (mw.sel_reg_wdata === SEL_REG_WDATA_MEM) -> mw.mem_rdata,
+  hazard.c0_wen := writeback.c0_waddr
+  hazard.c0_waddr := writeback.c0_waddr
+  execute.hi_forward := writeback.hi
+  execute.lo_forward := writeback.lo
+  execute.c0_data := writeback.c0_wdata
+  val decode = IO(Flipped(new Decode2Memory))
+  decode.wdata := MuxCase(0.U, Array(
+    (writeback.sel_reg_wdata === SEL_REG_WDATA_EX) -> writeback.alu_out,
+    (writeback.sel_reg_wdata === SEL_REG_WDATA_LNK) -> writeback.pcp8,
+    (writeback.sel_reg_wdata === SEL_REG_WDATA_MEM) -> writeback.mem_rdata,
   ))
 
-  mw.pcp8 := RegNext(em.pcp8)
-  mw.reg_wen := RegNext(em.reg_wen, 0.U)
-  mw.sel_reg_wdata := RegNext(em.sel_reg_wdata)
-  mw.reg_waddr := RegNext(em.reg_waddr)
-  mw.alu_out := RegNext(em.alu_out)
-  mw.hi_wen := RegNext(em.hi_wen)
-  mw.hi := RegNext(em.hi)
-  mw.lo_wen := RegNext(em.lo_wen)
-  mw.lo := RegNext(em.lo)
-  mw.c0_wen := RegNext(em.c0_wen)
-  mw.c0_waddr := RegNext(em.c0_waddr)
-  mw.c0_wdata := RegNext(em.c0_wdata)
+  writeback.pcp8 := RegNext(execute.pcp8)
+  writeback.reg_wen := RegNext(execute.reg_wen, 0.U)
+  writeback.sel_reg_wdata := RegNext(execute.sel_reg_wdata)
+  writeback.reg_waddr := RegNext(execute.reg_waddr)
+  writeback.alu_out := RegNext(execute.alu_out)
+  writeback.hi_wen := RegNext(execute.hi_wen)
+  writeback.hi := RegNext(execute.hi)
+  writeback.lo_wen := RegNext(execute.lo_wen)
+  writeback.lo := RegNext(execute.lo)
+  writeback.c0_wen := RegNext(execute.c0_wen)
+  writeback.c0_waddr := RegNext(execute.c0_waddr)
+  writeback.c0_wdata := RegNext(execute.c0_wdata)
 
   val data_mem = Module(new DataMem)
   locally {
     import data_mem.io._
-    wen := RegNext(em.mem_wen, 0.U)
-    addr := RegNext(em.alu_out)
-    wdata := RegNext(em.mem_wdata)
-    mw.mem_rdata := rdata
-    size := em.mem_size
+    wen := RegNext(execute.mem_wen, 0.U)
+    addr := RegNext(execute.alu_out)
+    wdata := RegNext(execute.mem_wdata)
+    writeback.mem_rdata := rdata
+    size := execute.mem_size
   }
 }

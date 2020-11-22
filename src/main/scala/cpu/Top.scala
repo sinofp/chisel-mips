@@ -24,26 +24,22 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   val hazard = Module(new HazardUnit(2))
 
   // br & j
-  fetch.ef <> execute.ef
-  fetch.df <> decode.df
-  junk_output := decode.df.jump
+  fetch.execute <> execute.fetch
+  fetch.decode <> decode.fetch
+  junk_output := decode.fetch.jump
 
-  decode.fd <> fetch.fd
-  decode.wd <> writeback.wd
-  decode.ed <> execute.ed
-  decode.md <> memory.md
-  execute.de <> decode.de
-  memory.em <> execute.em
-  writeback.mw <> memory.mw
+  decode.writeback <> writeback.decode
+  decode.memory <> memory.decode
+  execute.decode <> decode.execute
+  execute.memory <> memory.execute
+  execute.writeback <> writeback.execute
+  writeback.memory <> memory.writeback
 
-  hazard.fh <> fetch.hf
-  hazard.dh <> decode.hd
-  hazard.eh <> execute.he
-  hazard.mh <> memory.hm
-  hazard.wh <> writeback.hw
-
-  execute.me <> memory.me
-  execute.we <> writeback.we
+  hazard.fetch <> fetch.hazard
+  hazard.decode <> decode.hazard
+  hazard.execute <> execute.hazard
+  hazard.memory <> memory.hazard
+  hazard.writeback <> writeback.hazard
 
   val t_regs = if (c.dTReg) Some(IO(Output(new TRegWindow()))) else None
   if (c.dTReg) {

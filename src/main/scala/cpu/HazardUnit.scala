@@ -10,17 +10,17 @@ import cpu.util.{Config, DefCon}
 
 class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {
   require(readPorts >= 0)
-  val fh = IO(new FHPort)
-  val dh = IO(new DHPort(readPorts))
-  val eh = IO(new EHPort)
-  val mh = IO(new MHPort)
-  val wh = IO(new WHPort)
+  val fetch = IO(new Fetch2Hazard)
+  val decode = IO(new Decode2Hazard(readPorts))
+  val execute = IO(new Execute2Hazard)
+  val memory = IO(new Memory2Hazard)
+  val writeback = IO(new Writeback2Hazard)
 
   // RegFile 数据前推
   val forward_port = (i: Int) => MuxCase(FORWARD_NO, Array(
-    (eh.wen && (eh.waddr =/= 0.U) && dh.raddr(i) === eh.waddr) -> FORWARD_EXE,
-    (mh.wen && (mh.waddr =/= 0.U) && dh.raddr(i) === mh.waddr) -> FORWARD_MEM,
-    (wh.wen && (wh.waddr =/= 0.U) && dh.raddr(i) === wh.waddr) -> FORWARD_WB,
+    (execute.wen && (execute.waddr =/= 0.U) && decode.raddr(i) === execute.waddr) -> FORWARD_EXE,
+    (memory.wen && (memory.waddr =/= 0.U) && decode.raddr(i) === memory.waddr) -> FORWARD_MEM,
+    (writeback.wen && (writeback.waddr =/= 0.U) && decode.raddr(i) === writeback.waddr) -> FORWARD_WB,
   ))
   if (c.dForward) {
     val cnt = Counter(true.B, 100)
@@ -30,26 +30,26 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   }
 
   for (i <- 0 until readPorts) {
-    dh.forward(i) := forward_port(i)
+    decode.forward(i) := forward_port(i)
   }
 
   // cp0数据前推
-  eh.forward_c0 := MuxCase(FORWARD_C0_NO, Array(
-    (mh.c0_wen && mh.c0_waddr === eh.c0_raddr) -> FORWARD_C0_MEM,
-    (wh.c0_wen && wh.c0_waddr === eh.c0_raddr) -> FORWARD_C0_WB,
+  execute.forward_c0 := MuxCase(FORWARD_C0_NO, Array(
+    (memory.c0_wen && memory.c0_waddr === execute.c0_raddr) -> FORWARD_C0_MEM,
+    (writeback.c0_wen && writeback.c0_waddr === execute.c0_raddr) -> FORWARD_C0_WB,
   ))
 
   // HILO 数据前推到 Execute，主要为了 mfhi $1 后面的指令用到 $1
-  eh.forward_hi := MuxCase(FORWARD_HILO_NO, Array(
-    (mh.hi_wen && !eh.hi_wen) -> FORWARD_HILO_MEM,
-    (wh.hi_wen && !eh.hi_wen) -> FORWARD_HILO_WB,
+  execute.forward_hi := MuxCase(FORWARD_HILO_NO, Array(
+    (memory.hi_wen && !execute.hi_wen) -> FORWARD_HILO_MEM,
+    (writeback.hi_wen && !execute.hi_wen) -> FORWARD_HILO_WB,
   ))
-  eh.forward_lo := MuxCase(FORWARD_HILO_NO, Array(
-    (mh.lo_wen && !eh.lo_wen) -> FORWARD_HILO_MEM,
-    (wh.lo_wen && !eh.lo_wen) -> FORWARD_HILO_WB,
+  execute.forward_lo := MuxCase(FORWARD_HILO_NO, Array(
+    (memory.lo_wen && !execute.lo_wen) -> FORWARD_HILO_MEM,
+    (writeback.lo_wen && !execute.lo_wen) -> FORWARD_HILO_WB,
   ))
-//  eh.forward_hi := FORWARD_HILO_NO
-//  eh.forward_lo := FORWARD_HILO_NO
+  //  eh.forward_hi := FORWARD_HILO_NO
+  //  eh.forward_lo := FORWARD_HILO_NO
   //        ↓ load stall
   // c1 c2 c3 c4 c5 c6 c7 (cycle)
   // f1 d1 e1 m1 w1
@@ -57,11 +57,11 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   //       f2 d2 e2 m2 w2
   // c3 时发生 load stall, c4 时 fetch 应该还是 f2, decode 应该还是 d2, execute 以及其后应该被冲刷
   // 所以 c3 时 fetch, decode, execute 应该分别保留 pc_now, 保留 inst, 下周期输出 mem/reg_wen 为 0, br_type 为 no
-  val load_stall = dh.forward.exists((_: UInt) === FORWARD_EXE) && dh.prev_load
-  fh.stall := load_stall || eh.div_not_ready
-  dh.stall := load_stall || eh.div_not_ready
-  eh.flush := load_stall
-  eh.stall := eh.div_not_ready
+  val load_stall = decode.forward.exists((_: UInt) === FORWARD_EXE) && decode.prev_load
+  fetch.stall := load_stall || execute.div_not_ready
+  decode.stall := load_stall || execute.div_not_ready
+  execute.flush := load_stall
+  execute.stall := execute.div_not_ready
 
   //                        ↓ branch flush
   // cycle         : c1 c2 c3 c4 c5
@@ -71,5 +71,5 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // target        :          f4 d4 e4 m4 w4
   // 在 c3, execute 中的 br_unit 判断出要 branch
   // c4 时, fetch 照样刷新, 但 decode 要关掉各种副作用
-  dh.flush := eh.branch
+  decode.flush := execute.branch
 }

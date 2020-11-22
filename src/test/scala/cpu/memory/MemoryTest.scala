@@ -16,12 +16,12 @@ class MemoryTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
       for (wen <- 0 to 1) {
         testValues.foreach { case (x, y) =>
-          c.em.mem_wen.poke(wen.B)
-          c.em.mem_size.poke(MEM_W)
-          c.em.alu_out.poke(x.U)
-          c.em.mem_wdata.poke(y.U)
+          c.execute.mem_wen.poke(wen.B)
+          c.execute.mem_size.poke(MEM_W)
+          c.execute.alu_out.poke(x.U)
+          c.execute.mem_wdata.poke(y.U)
           c.clock.step(2) // 一个周期缓存上个流水线，一个周期写入
-          c.mw.mem_rdata.expect(if (wen == 0) 0.U else y.U)
+          c.writeback.mem_rdata.expect(if (wen == 0) 0.U else y.U)
         }
       }
     }

@@ -11,7 +11,7 @@ import cpu.util.{Config, DefCon}
 
 class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {
   require(readPorts >= 0)
-  val in = IO(Input(new WriteBack2Decode))
+  val in = IO(new WriteBack2Decode)
   val io = IO(new Bundle() {
     val raddr = Input(Vec(readPorts, UInt(5.W)))
     val rdata = Output(Vec(readPorts, UInt(32.W)))

@@ -6,64 +6,62 @@ import chisel3._
 import chisel3.util.{MuxCase, MuxLookup}
 import cpu.decode.CtrlSigDef._
 import cpu.execute.ALU.{FN_DIV, FN_MULT, SZ_ALU_FN}
-import cpu.port.hazard.{EHPort, WdataPort}
+import cpu.port.hazard.Execute2Hazard
 import cpu.port.stage._
 import cpu.util.{Config, DefCon}
 
 class Execute(implicit c: Config = DefCon) extends MultiIOModule {
-  val de = IO(Input(new Decode2Execute))
-  val em = IO(Output(new Execute2Memory))
-  val ef = IO(new Execute2Fetch)
+  val decode = IO(Flipped(new Decode2Execute))
+  val memory = IO(Flipped(new Execute2Memory))
+  val fetch = IO(new Execute2Fetch)
   // forward
-  val he = IO(Flipped(new EHPort))
-  he.wen := em.reg_wen
-  he.waddr := em.reg_waddr
-  he.hi_wen := em.hi_wen
-  he.lo_wen := em.lo_wen
-  val ed = IO(Output(new WdataPort))
-  ed.wdata := MuxLookup(em.sel_reg_wdata, 0.U, Array(
-    SEL_REG_WDATA_EX -> em.alu_out,
-    SEL_REG_WDATA_LNK -> em.pcp8,
+  val hazard = IO(Flipped(new Execute2Hazard))
+  hazard.wen := memory.reg_wen
+  hazard.waddr := memory.reg_waddr
+  hazard.hi_wen := memory.hi_wen
+  hazard.lo_wen := memory.lo_wen
+  decode.wdata := MuxLookup(memory.sel_reg_wdata, 0.U, Array(
+    SEL_REG_WDATA_EX -> memory.alu_out,
+    SEL_REG_WDATA_LNK -> memory.pcp8,
   ))
-  val me = IO(Input(new Memory2Execute))
-  val we = IO(new WriteBack2Execute)
+  val writeback = IO(new WriteBack2Execute)
 
   val cu_mul = Wire(Bool())
-  cu_mul := RegNext(Mux(he.stall, cu_mul, de.mul))
+  cu_mul := RegNext(Mux(hazard.stall, cu_mul, decode.mul))
   val cu_div = Wire(Bool())
-  cu_div := RegNext(Mux(he.stall, cu_div, de.div))
+  cu_div := RegNext(Mux(hazard.stall, cu_div, decode.div))
   val alu_fn = Wire(UInt(SZ_ALU_FN))
-  alu_fn := RegNext(Mux(he.stall, alu_fn, de.alu_fn))
+  alu_fn := RegNext(Mux(hazard.stall, alu_fn, decode.alu_fn))
   val alu_n = Wire(Bool())
-  alu_n := RegNext(Mux(he.stall, alu_n, de.alu_n))
+  alu_n := RegNext(Mux(hazard.stall, alu_n, decode.alu_n))
   val num1 = Wire(UInt(32.W))
-  num1 := RegNext(Mux(he.stall, num1, de.num1))
+  num1 := RegNext(Mux(hazard.stall, num1, decode.num1))
   val num2 = Wire(UInt(32.W))
-  num2 := RegNext(Mux(he.stall, num2, de.num2))
+  num2 := RegNext(Mux(hazard.stall, num2, decode.num2))
   val br_t = Wire(UInt(SZ_BR_TYPE))
-  br_t := RegNext(Mux(he.stall, br_t, Mux(he.flush, BR_TYPE_NO, de.br_type)))
+  br_t := RegNext(Mux(hazard.stall, br_t, Mux(hazard.flush, BR_TYPE_NO, decode.br_type)))
   val sel_move = Wire(UInt(SZ_SEL_MOVE))
-  sel_move := RegNext(Mux(he.stall, sel_move, de.sel_move))
+  sel_move := RegNext(Mux(hazard.stall, sel_move, decode.sel_move))
 
-  em.pcp8 := RegNext(Mux(he.stall, em.pcp8, de.pcp8))
-  em.mem_wen := RegNext(Mux(he.stall, em.mem_wen, Mux(he.flush, 0.U, de.mem_wen)), 0.U)
-  em.reg_wen := RegNext(Mux(he.stall, em.reg_wen, Mux(he.flush, 0.U, de.reg_wen)), 0.U)
-  em.sel_reg_wdata := RegNext(Mux(he.stall, em.sel_reg_wdata, de.sel_reg_wdata), 0.U)
-  em.reg_waddr := RegNext(Mux(he.stall, em.reg_waddr, de.reg_waddr), 0.U)
-  ef.br_addr := RegNext(Mux(he.stall, ef.br_addr, de.br_addr))
-  em.mem_wdata := RegNext(Mux(he.stall, em.mem_wdata, de.mem_wdata))
-  em.mem_size := RegNext(Mux(he.stall, em.mem_size, de.mem_size))
-  em.hi_wen := RegNext(Mux(he.stall, em.hi_wen, de.hi_wen), 0.U)
-  em.lo_wen := RegNext(Mux(he.stall, em.lo_wen, de.lo_wen), 0.U)
-  em.c0_wen := RegNext(Mux(he.stall, em.c0_wen, de.c0_wen), 0.U)
-  em.c0_wdata := num2 // $rt
-  em.c0_waddr := RegNext(Mux(he.stall, em.c0_waddr, de.c0_addr))
+  memory.pcp8 := RegNext(Mux(hazard.stall, memory.pcp8, decode.pcp8))
+  memory.mem_wen := RegNext(Mux(hazard.stall, memory.mem_wen, Mux(hazard.flush, 0.U, decode.mem_wen)), 0.U)
+  memory.reg_wen := RegNext(Mux(hazard.stall, memory.reg_wen, Mux(hazard.flush, 0.U, decode.reg_wen)), 0.U)
+  memory.sel_reg_wdata := RegNext(Mux(hazard.stall, memory.sel_reg_wdata, decode.sel_reg_wdata), 0.U)
+  memory.reg_waddr := RegNext(Mux(hazard.stall, memory.reg_waddr, decode.reg_waddr), 0.U)
+  fetch.br_addr := RegNext(Mux(hazard.stall, fetch.br_addr, decode.br_addr))
+  memory.mem_wdata := RegNext(Mux(hazard.stall, memory.mem_wdata, decode.mem_wdata))
+  memory.mem_size := RegNext(Mux(hazard.stall, memory.mem_size, decode.mem_size))
+  memory.hi_wen := RegNext(Mux(hazard.stall, memory.hi_wen, decode.hi_wen), 0.U)
+  memory.lo_wen := RegNext(Mux(hazard.stall, memory.lo_wen, decode.lo_wen), 0.U)
+  memory.c0_wen := RegNext(Mux(hazard.stall, memory.c0_wen, decode.c0_wen), 0.U)
+  memory.c0_wdata := num2 // $rt
+  memory.c0_waddr := RegNext(Mux(hazard.stall, memory.c0_waddr, decode.c0_addr))
 
-  we.c0_raddr := em.c0_waddr // 都是rd
-  he.c0_raddr := we.c0_raddr
-  val c0 = MuxCase(we.c0_rdata, Array(
-    (he.forward_c0 === FORWARD_C0_MEM) -> me.c0_data,
-    (he.forward_c0 === FORWARD_HILO_WB) -> we.c0_data,
+  writeback.c0_raddr := memory.c0_waddr // 都是rd
+  hazard.c0_raddr := writeback.c0_raddr
+  val c0 = MuxCase(writeback.c0_rdata, Array(
+    (hazard.forward_c0 === FORWARD_C0_MEM) -> memory.c0_data,
+    (hazard.forward_c0 === FORWARD_HILO_WB) -> writeback.c0_data,
   ))
 
   val alu = Module(new ALU)
@@ -72,10 +70,10 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     fn := alu_fn
     in1 := num1
     in2 := num2
-    em.alu_out := MuxCase(out, Array(
+    memory.alu_out := MuxCase(out, Array(
       alu_n -> ~out,
-      (sel_move === SEL_MOVE_HI) -> em.hi,
-      (sel_move === SEL_MOVE_LO) -> em.lo,
+      (sel_move === SEL_MOVE_HI) -> memory.hi,
+      (sel_move === SEL_MOVE_LO) -> memory.lo,
       (sel_move === SEL_MOVE_C0) -> c0,
     ))
     cmp_out := DontCare
@@ -90,7 +88,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     divider := num2
     start := cu_div
     sign := alu_fn === FN_DIV
-    he.div_not_ready := cu_div && !ready
+    hazard.div_not_ready := cu_div && !ready
   }
 
   val mul = Module(new Mul)
@@ -101,24 +99,24 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     sign := alu_fn === FN_MULT
   }
 
-  em.hi := MuxCase(num1, Array( // 默认num1是mthi, rs读出来的值 -- 要加上em.hi_wen做条件限定么？
+  memory.hi := MuxCase(num1, Array( // 默认num1是mthi, rs读出来的值 -- 要加上em.hi_wen做条件限定么？
     cu_div -> div.io.quotient,
     cu_mul -> mul.io.product(63, 32),
-    (he.forward_hi === FORWARD_HILO_MEM) -> me.hi, // 前推时都是em.hi_wen=0的时候，所以改了向后传的hi也无所谓
-    (he.forward_hi === FORWARD_HILO_WB) -> we.hi,
+    (hazard.forward_hi === FORWARD_HILO_MEM) -> memory.hi_forward, // 前推时都是em.hi_wen=0的时候，所以改了向后传的hi也无所谓
+    (hazard.forward_hi === FORWARD_HILO_WB) -> writeback.hi,
   ))
-  em.lo := MuxCase(num1, Array(
+  memory.lo := MuxCase(num1, Array(
     cu_div -> div.io.quotient,
     cu_mul -> mul.io.product(31, 0),
-    (he.forward_lo === FORWARD_HILO_MEM) -> me.lo,
-    (he.forward_lo === FORWARD_HILO_WB) -> we.lo,
+    (hazard.forward_lo === FORWARD_HILO_MEM) -> memory.lo_forward,
+    (hazard.forward_lo === FORWARD_HILO_WB) -> writeback.lo,
   ))
 
   if (c.dExecute) {
-    printf(p"[log execute]\n\tin1 = ${Hexadecimal(de.num1)}, in2 = ${Hexadecimal(de.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")
+    printf(p"[log execute]\n\tin1 = ${Hexadecimal(decode.num1)}, in2 = ${Hexadecimal(decode.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")
   }
   if (c.dBrUnit) {
-    printf(p"[log execute]\n\tbranch = ${ef.branch}, br_addr >> 2 = ${ef.br_addr / 4.U}\n")
+    printf(p"[log execute]\n\tbranch = ${fetch.branch}, br_addr >> 2 = ${fetch.br_addr / 4.U}\n")
   }
 
   val br_unit = Module(new BrUnit)
@@ -128,7 +126,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     import br_unit.io._
     slt_res := alu.io.out
     br_type := br_t
-    ef.branch := branch
+    fetch.branch := branch
   }
-  he.branch := ef.branch
+  hazard.branch := fetch.branch
 }

@@ -19,7 +19,7 @@ class FetchTest extends FlatSpec with ChiselScalatestTester with Matchers {
     implicit val c: Config = Config(insts = insts)
     test(new Fetch) { c =>
       insts.foreach({ inst =>
-        c.fd.inst.expect(inst)
+        c.decode.inst.expect(inst)
         c.clock.step(1)
       })
     }
@@ -29,14 +29,14 @@ class FetchTest extends FlatSpec with ChiselScalatestTester with Matchers {
     implicit val conf: Config = Config(dFetch = true)
     test(new Fetch) { c =>
       for (x <- 1 to 10) {
-        c.fd.pcp4.expect((x * 4).U)
+        c.decode.pcp4.expect((x * 4).U)
         c.clock.step(1)
       }
       c.reset.poke(true.B) // 让pc_now归零
       c.clock.step(1)
       c.reset.poke(false.B)
       for (x <- 1 to 10) {
-        c.fd.pcp4.expect((x * 4).U)
+        c.decode.pcp4.expect((x * 4).U)
         c.clock.step(1)
       }
     }

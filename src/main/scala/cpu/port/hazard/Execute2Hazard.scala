@@ -6,7 +6,7 @@ import chisel3._
 import cpu.decode.CtrlSigDef.{SZ_FORWARD_C0, SZ_FORWARD_HILO}
 import cpu.port.{Flush, Stall}
 
-class EHPort extends Bundle with Flush with Stall {
+class Execute2Hazard extends Bundle with Flush with Stall {
   val branch = Input(Bool())
   val div_not_ready = Input(Bool())
   val c0_raddr = Input(UInt(5.W))
