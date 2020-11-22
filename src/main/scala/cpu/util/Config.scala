@@ -10,6 +10,7 @@ case class Config(
     dInstMem: Boolean = false,
     dDecode: Boolean = false,
     dCU: Boolean = false,
+    dCP0: Boolean = false,
     dRegFile: Boolean = false,
     dExecute: Boolean = false,
     dALU: Boolean = false,

@@ -9,12 +9,15 @@ import cpu.decode.Decode
 import cpu.execute.Execute
 import cpu.fetch.Fetch
 import cpu.memory.Memory
+import cpu.port.core.Core2WriteBack
 import cpu.port.debug.TRegWindow
 import cpu.util.{Config, DefCon}
 import cpu.writeback.WriteBack
 
 class Top(implicit c: Config = DefCon) extends MultiIOModule {
-  val junk_output = IO(Output(Bool())) // 随便加个输出，防止优化成空电路
+  val io = IO(new Bundle() {
+    val interrupt = new Core2WriteBack
+  })
 
   val fetch = Module(new Fetch)
   val decode = Module(new Decode)
@@ -26,7 +29,6 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   // br & j
   fetch.execute <> execute.fetch
   fetch.decode <> decode.fetch
-  junk_output := decode.fetch.jump
 
   decode.writeBack <> writeback.decode
   decode.memory <> memory.decode
@@ -41,6 +43,9 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   hazard.memory <> memory.hazard
   hazard.writeback <> writeback.hazard
 
+  io.interrupt <> writeback.core
+
+  // debug
   val t_regs = if (c.dTReg) Some(IO(Output(new TRegWindow()))) else None
   if (c.dTReg) {
     t_regs.get.getElements.foreach(_ := 1.U)

@@ -109,12 +109,14 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "400a5800", // mfc0 $t2, $11
       "014a5820", // add $t3, $t2, $t2
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, dRegFile = true, dTReg = true)
+    implicit val c: Config = Config(insts = insts, dTReg = true, dCP0 = true)
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t2.expect(60.U)
       c.clock.step(1)
       c.t_regs.get.t3.expect(120.U)
+      c.clock.step(53) // count 到60的下一周期，timer_int的1被写入
+      c.io.interrupt.timer_int.expect(true.B)
     }
   }
 }

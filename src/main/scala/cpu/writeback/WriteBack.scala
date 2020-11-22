@@ -5,6 +5,7 @@ package cpu.writeback
 import chisel3._
 import chisel3.util.MuxLookup
 import cpu.decode.CtrlSigDef._
+import cpu.port.core.Core2WriteBack
 import cpu.port.hazard.Writeback2Hazard
 import cpu.port.stage.{Memory2WriteBack, WriteBack2Decode, WriteBack2Execute}
 import cpu.util.{Config, DefCon}
@@ -14,6 +15,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val execute = IO(Flipped(new WriteBack2Execute))
   val memory = IO(Flipped(new Memory2WriteBack))
   val hazard = IO(Flipped(new Writeback2Hazard))
+  val core = IO(new Core2WriteBack)
 
   // RegNext
   val pcp8 = RegNext(memory.pcp8)
@@ -49,14 +51,14 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     wdata := c0_wdata
     raddr := execute.c0_raddr
     execute.c0_rdata := rdata
-    int := DontCare
+    int := core.int
     BadVAddr := DontCare
     Count := DontCare
     Compare := DontCare
     Status := DontCare
     Cause := DontCare
     EPC := DontCare
-    timer_int := DontCare
+    core.timer_int := timer_int
   }
 
   // write rf (& forward reg)

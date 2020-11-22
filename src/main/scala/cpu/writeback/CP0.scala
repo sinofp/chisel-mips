@@ -37,13 +37,7 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
     .foreach { case (x, y) => x := y.asUInt() }
 
   Count := Count + 1.U
-  //  Cause(15, 10) := i.int
   Cause := Cat(Cause(31, 16), i.int, Cause(9, 0))
-  //  Cause := {
-  //    val bools = VecInit(Cause.asBools)
-  //    (10 to 15).foreach(x => bools(x) := i.int(x - 10))
-  //    bools.asUInt
-  //  }
 
   when(Compare =/= 0.U && Count === Compare) {
     timer_int := true.B
@@ -88,6 +82,18 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
     CP0_CAUSE -> Cause,
     CP0_EPC -> EPC,
   ))
+
+  if (c.dCP0) {
+    val cnt = Counter(true.B, 100)
+    printf(p"[log CP0]\n\tcycle = ${cnt._1}\n" +
+      p"\tBadVaddr = ${Hexadecimal(BadVAddr)}\n" +
+      p"\tCount = ${Hexadecimal(Count)}\n" +
+      p"\tCompare = ${Hexadecimal(Compare)}\n" +
+      p"\tStatus = ${Hexadecimal(Status)}\n" +
+      p"\tCause = ${Hexadecimal(Cause)}\n" +
+      p"\tEPC = ${Hexadecimal(EPC)}\n" +
+      p"\ttimer_int = ${Binary(timer_int)}\n")
+  }
 }
 
 object CP0 extends App {
