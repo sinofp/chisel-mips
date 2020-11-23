@@ -55,8 +55,8 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "1000ffff",
       "00000000"
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, dRegFile = true, dDataMem = true, dBrUnit = true,
-      dFetch = true, dExecute = true, dTReg = true)
+    implicit val c: Config = Config(insts = insts,
+      dFetch = true, dTReg = true, dExcept = true)
     test(new Top) { c =>
       c.clock.step(14)
       c.t_regs.get.t1.expect("hffff89ab".U)

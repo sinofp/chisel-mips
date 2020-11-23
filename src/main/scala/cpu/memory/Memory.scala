@@ -3,12 +3,13 @@
 package cpu.memory
 
 import chisel3._
-import chisel3.util.MuxCase
+import chisel3.util.{Counter, MuxCase}
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.Memory2Hazard
 import cpu.port.stage.{Decode2Memory, Execute2Memory, Memory2WriteBack}
 import cpu.util.{Config, DefCon}
 import cpu.writeback.CP0._
+import cpu.writeback.{Cause, Status}
 
 class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val decode = IO(Flipped(new Decode2Memory))
@@ -66,17 +67,17 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   // todo 部分可写
   val Cause =
   Mux(writeback.c0_wen_f && writeback.c0_waddr_f === CP0_CAUSE,
-    writeback.c0_wdata_f, writeback.c0_cause)
+    writeback.c0_wdata_f.asTypeOf(new Cause), writeback.c0_cause)
   val EPC =
     Mux(writeback.c0_wen_f && writeback.c0_waddr_f === CP0_EPC,
       writeback.c0_wdata_f, writeback.c0_epc)
   val Status =
     Mux(writeback.c0_wen_f && writeback.c0_waddr_f === CP0_STATUS,
-      writeback.c0_wdata_f, writeback.c0_status)
+      writeback.c0_wdata_f.asTypeOf(new Status), writeback.c0_status)
   // exception
   writeback.except_type := MuxCase(0.U, Array(
     (writeback.pc_now === 0.U) -> 0.U,
-    (((Cause(15, 8) & Status(15, 8)) =/= 0.U) && Status(1, 0) === 1.U) -> EXCEPT_INT,
+    ((((Cause.IP7_IP2 ## Cause.IP1_IP0) & Status.IM7_IM0) =/= 0.U) && Status.EXL === 0.U && Status.IE === 1.U) -> EXCEPT_INT,
     except_type(8).asBool -> EXCEPT_SYSCALL,
     except_type(9).asBool -> EXCEPT_INST_INVALID,
     except_type(10).asBool -> EXCEPT_TRAP,
@@ -85,4 +86,10 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   ))
   hazard.EPC := EPC
   hazard.except_type := writeback.except_type
+
+  // debug
+  if (c.dExcept) {
+    val cnt = Counter(true.B, 100)
+    printf(p"[log Memory]\n\tcycle = ${cnt._1}\n\tEXCEPT_TYPE = ${Hexadecimal(writeback.except_type)}\n")
+  }
 }

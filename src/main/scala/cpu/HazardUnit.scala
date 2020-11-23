@@ -75,13 +75,14 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   decode.flush := execute.branch || fetch.estart
 
   // exception
+  val entry = "hbfc00380".U
   fetch.estart := memory.except_type =/= 0.U
   fetch.newpc := MuxLookup(memory.except_type, 0.U, Array(
-    EXCEPT_INT -> "h20".U,
-    EXCEPT_SYSCALL -> "h40".U,
-    EXCEPT_INST_INVALID -> "h40".U,
-    EXCEPT_TRAP -> "h40".U,
-    EXCEPT_OVERFLOW -> "h40".U,
+    EXCEPT_INT -> entry,
+    EXCEPT_SYSCALL -> entry,
+    EXCEPT_INST_INVALID -> entry,
+    EXCEPT_TRAP -> entry,
+    EXCEPT_OVERFLOW -> entry,
     EXCEPT_ERET -> memory.EPC,
   ))
   memory.flush := fetch.estart

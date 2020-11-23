@@ -105,6 +105,6 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
     SEL_REG_WADDR_RT -> rt,
     SEL_REG_WADDR_31 -> 31.U,
   ))
-  execute.except_type := Cat(0.U(19.W), is_eret, 0.U(2.W), ~inst_invalid, is_syscall, 0.U(8.W))
+  execute.except_type := Cat(0.U(19.W), is_eret, 0.U(2.W), inst_invalid, is_syscall, 0.U(8.W))
   execute.pc_now := pcp4 - 4.U // todo
 }

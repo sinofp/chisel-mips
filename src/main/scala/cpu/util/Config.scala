@@ -13,6 +13,7 @@ case class Config(
     dCP0: Boolean = false,
     dRegFile: Boolean = false,
     dExecute: Boolean = false,
+    dExcept: Boolean = false,
     dALU: Boolean = false,
     dDiv: Boolean = false,
     dBrUnit: Boolean = false,

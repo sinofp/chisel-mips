@@ -62,8 +62,8 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
     val BadVAddr = Output(UInt(32.W))
     val Count = Output(UInt(32.W))
     val Compare = Output(UInt(32.W))
-    val Status = Output(UInt(32.W))
-    val Cause = Output(UInt(32.W))
+    val Status = Output(new Status)
+    val Cause = Output(new Cause)
     val EPC = Output(UInt(32.W))
     val timer_int = Output(Bool())
   })
@@ -80,7 +80,7 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
   val EPC = RegInit(0.U)
   val timer_int = RegInit(false.B)
   o.getElements.zip(Seq(timer_int, EPC, Cause, Status, Compare, Count, BadVAddr))
-    .foreach { case (x, y) => x := y.asUInt() }
+    .foreach { case (x, y) => x := y }
 
   Count := Count + 1.U
   Cause.IP7_IP2 := int
