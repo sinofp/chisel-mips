@@ -33,6 +33,6 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
   if (c.dFetch) {
     val cnt = Counter(true.B, 100)
     printf(p"[log Fetch]\n\tcycle = ${cnt._1}\n\tpc_now >> 2 = ${Decimal(pc_now / 4.U)}, pc_next >> 2 = ${Decimal(pc_next / 4.U)}, inst = ${Hexadecimal(decode.inst)}\n\tstall = ${hazard.stall},\n" +
-      p"\tbranch = ${execute.branch}, pc_jump >> 2 = ${Decimal(execute.br_addr / 4.U)}, jump = ${decode.jump}, pc_jump >> 2 = ${Decimal(decode.j_addr / 4.U)}\n")
+      p"\tbranch = ${execute.branch}, br_addr >> 2 = ${Decimal(execute.br_addr / 4.U)}, jump = ${decode.jump}, j_addr >> 2 = ${Decimal(decode.j_addr / 4.U)}\n")
   }
 }

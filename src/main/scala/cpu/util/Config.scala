@@ -14,6 +14,7 @@ case class Config(
     dRegFile: Boolean = false,
     dExecute: Boolean = false,
     dExcept: Boolean = false,
+    dExceptEntry: Option[UInt] = None,
     dALU: Boolean = false,
     dDiv: Boolean = false,
     dBrUnit: Boolean = false,

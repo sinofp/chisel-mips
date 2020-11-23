@@ -1,7 +1,11 @@
+# Temp file for test
+*.S
+*.txt
 # Chisel generated Verilog
 *.anno.json
 *.fir
 *.v
+*.f
 ### Project Specific stuff
 test_run_dir/*
 ### XilinxISE template

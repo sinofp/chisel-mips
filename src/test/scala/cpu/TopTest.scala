@@ -2,10 +2,15 @@
 
 package cpu
 
+import java.io.{File, PrintWriter}
+
 import chisel3._
 import chiseltest._
 import cpu.util.Config
 import org.scalatest._
+
+import scala.io.Source
+import scala.sys.process._
 
 class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "Top"
@@ -117,6 +122,35 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.t_regs.get.t3.expect(120.U)
       c.clock.step(53) // count 到60的下一周期，timer_int的1被写入
       c.io.interrupt.timer_int.expect(true.B)
+    }
+  }
+
+  it should "handle syscall and eret" in {
+    val writer = new PrintWriter(new File("mips.S"))
+    try writer.write(
+      """j _start
+        |nop
+        |addi $t2, $0, 200
+        |eret
+        |
+        |_start:
+        |addi $t1, $0, 100
+        |syscall
+        |add $t3, $t2, $t1
+        |""".stripMargin)
+    finally writer.close()
+    "java -jar Mars4_5.jar mc CompactTextAtZero a dump .text HexText inst.txt mips.S" !
+    val source = Source.fromFile("inst.txt")
+    val insts = try source.getLines.toArray.map("h" + _).map(_.U) finally source.close
+    implicit val c: Config = Config(insts = insts, dTReg = true, dRegFile = true,
+      dExcept = true, dExceptEntry = Some((2 * 4).U), dFetch = true)
+    test(new Top) { c =>
+      c.clock.step(7)
+      c.t_regs.get.t1.expect(100.U)
+      c.clock.step(10) // 此时fetch到eret
+      c.t_regs.get.t2.expect(200.U)
+      //      c.clock.step(10)
+      //      c.t_regs.get.t3.expect(300.U)
     }
   }
 }
