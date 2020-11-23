@@ -15,6 +15,14 @@ class Status extends Bundle {
   val zeros_3 = UInt(6.W)
   val EXL = Bool()
   val IE = Bool()
+
+  def update(data: UInt): Status = {
+    val newStatus = data.asTypeOf(new Status)
+    this.IM7_IM0 := newStatus.IM7_IM0
+    this.EXL := newStatus.EXL
+    this.IE := newStatus.IE
+    this
+  }
 }
 
 class Cause extends Bundle {
@@ -26,6 +34,11 @@ class Cause extends Bundle {
   val zeros_2 = UInt(1.W)
   val ExcCode = UInt(5.W)
   val zeros_3 = UInt(2.W)
+
+  def update(data: UInt): Cause = {
+    this.IP1_IP0 := data.asTypeOf(new Cause).IP1_IP0
+    this
+  }
 }
 
 object CP0 {
@@ -98,16 +111,13 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
         Count := wdata
       }
       is(CP0_STATUS) {
-        val newStatus = wdata.asTypeOf(new Status)
-        Status.IM7_IM0 := newStatus.IM7_IM0
-        Status.EXL := newStatus.EXL
-        Status.IE := newStatus.IE
+        Status.update(wdata)
       }
       is(CP0_COMPARE) {
         Compare := wdata
       }
       is(CP0_CAUSE) {
-        Cause.IP1_IP0 := wdata.asTypeOf(new Cause).IP1_IP0
+        Cause.update(wdata)
       }
       is(CP0_EPC) {
         EPC := wdata

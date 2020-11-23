@@ -63,16 +63,12 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   ))
 
   // forward cp0 to here
-  // todo 部分可写
-  val Cause =
-  Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_CAUSE,
-    writeback.wm_c0_wdata.asTypeOf(new Cause), writeback.c0_cause)
-  val EPC =
-    Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_EPC,
-      writeback.wm_c0_wdata, writeback.c0_epc)
-  val Status =
-    Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_STATUS,
-      writeback.wm_c0_wdata.asTypeOf(new Status), writeback.c0_status)
+  // 不能直接在Input上:=，所以得用asTypeOf创建一个Wire，在Wire上:=
+  val Cause = Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_CAUSE,
+    writeback.c0_cause.asTypeOf(new Cause).update(writeback.wm_c0_wdata), writeback.c0_cause)
+  val EPC = Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_EPC, writeback.wm_c0_wdata, writeback.c0_epc)
+  val Status = Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_STATUS,
+    writeback.c0_status.asTypeOf(new Status).update(writeback.wm_c0_wdata), writeback.c0_status)
   // exception
   writeback.except_type := MuxCase(0.U, Array(
     ((((Cause.IP7_IP2 ## Cause.IP1_IP0) & Status.IM7_IM0) =/= 0.U) && Status.EXL === 0.U && Status.IE === 1.U) -> EXCEPT_INT,
