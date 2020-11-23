@@ -59,10 +59,10 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // c3 时发生 load stall, c4 时 fetch 应该还是 f2, decode 应该还是 d2, execute 以及其后应该被冲刷
   // 所以 c3 时 fetch, decode, execute 应该分别保留 pc_now, 保留 inst, 下周期输出 mem/reg_wen 为 0, br_type 为 no
   val load_stall = decode.forward.exists((_: UInt) === FORWARD_EXE) && decode.prev_load
-  fetch.stall := (load_stall || execute.div_not_ready) && !fetch.estart
-  decode.stall := (load_stall || execute.div_not_ready) && !fetch.estart
-  execute.flush := load_stall || fetch.estart
-  execute.stall := execute.div_not_ready && !fetch.estart
+  fetch.stall := (load_stall || execute.div_not_ready) && !fetch.flush
+  decode.stall := (load_stall || execute.div_not_ready) && !fetch.flush
+  execute.flush := load_stall || fetch.flush
+  execute.stall := execute.div_not_ready && !fetch.flush
 
   //                        ↓ branch flush
   // cycle         : c1 c2 c3 c4 c5
@@ -72,11 +72,11 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // target        :          f4 d4 e4 m4 w4
   // 在 c3, execute 中的 br_unit 判断出要 branch
   // c4 时, fetch 照样刷新, 但 decode 要关掉各种副作用
-  decode.flush := execute.branch || fetch.estart
+  decode.flush := execute.branch || fetch.flush
 
   // exception
   val entry = c.dExceptEntry.getOrElse("hbfc00380".U)
-  fetch.estart := memory.except_type =/= 0.U
+  fetch.flush := memory.except_type =/= 0.U
   fetch.newpc := MuxLookup(memory.except_type, 0.U, Array(
     EXCEPT_INT -> entry,
     EXCEPT_SYSCALL -> entry,
@@ -85,6 +85,6 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
     EXCEPT_OVERFLOW -> entry,
     EXCEPT_ERET -> memory.EPC,
   ))
-  memory.flush := fetch.estart
-  writeback.flush := fetch.estart
+  memory.flush := fetch.flush
+  writeback.flush := fetch.flush
 }

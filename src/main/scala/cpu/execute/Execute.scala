@@ -52,7 +52,6 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     memory.lo_wen -> decode.lo_wen,
     memory.c0_wen -> decode.c0_wen,
     memory.c0_waddr -> decode.c0_addr,
-    memory.c0_wdata -> num2,
     memory.pc_now -> Mux(hazard.flush, 0.U, decode.pc_now),
     memory.is_in_delayslot -> Mux(hazard.flush, false.B, br_t =/= BR_TYPE_NO), // todo J 的延迟槽
     except_type -> Mux(hazard.flush, 0.U, decode.except_type),
@@ -138,6 +137,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     (hazard.forward_lo === FORWARD_HILO_MEM) -> memory.lo_forward,
     (hazard.forward_lo === FORWARD_HILO_WB) -> writeback.lo,
   ))
+  memory.c0_wdata := num2 // $rt
   memory.except_type := Cat(except_type(31, 12), overflow, trap, except_type(9, 0))
   // todo overflow
 

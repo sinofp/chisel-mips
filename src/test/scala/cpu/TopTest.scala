@@ -131,6 +131,9 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       """j _start
         |nop
         |addi $t2, $0, 200
+        |mfc0 $t9, $14
+        |addi $t9, $t9, 4
+        |mtc0 $t9, $14
         |eret
         |
         |_start:
@@ -142,15 +145,15 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
     "java -jar Mars4_5.jar mc CompactTextAtZero a dump .text HexText inst.txt mips.S" !
     val source = Source.fromFile("inst.txt")
     val insts = try source.getLines.toArray.map("h" + _).map(_.U) finally source.close
-    implicit val c: Config = Config(insts = insts, dTReg = true, dRegFile = true,
+    implicit val c: Config = Config(insts = insts, dTReg = true,
       dExcept = true, dExceptEntry = Some((2 * 4).U), dFetch = true)
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t1.expect(100.U)
-      c.clock.step(10) // 此时fetch到eret
+      c.clock.step(5)
       c.t_regs.get.t2.expect(200.U)
-      //      c.clock.step(10)
-      //      c.t_regs.get.t3.expect(300.U)
+      c.clock.step(8)
+      c.t_regs.get.t3.expect(300.U)
     }
   }
 }

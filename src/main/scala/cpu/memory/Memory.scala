@@ -90,6 +90,8 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   // debug
   if (c.dExcept) {
     val cnt = Counter(true.B, 100)
-    printf(p"[log Memory]\n\tcycle = ${cnt._1}\n\tEXCEPT_TYPE = ${Hexadecimal(writeback.except_type)}\n")
+    printf(p"[log Memory]\n\tcycle = ${cnt._1}\n " +
+      p"\tEXCEPT_TYPE = ${Hexadecimal(writeback.except_type)}, " +
+      p"EPC = ${Hexadecimal(writeback.c0_wdata_f)}\n")
   }
 }
