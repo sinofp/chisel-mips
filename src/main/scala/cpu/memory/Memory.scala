@@ -30,9 +30,8 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   writeback.c0_wen := RegNext(Mux(hazard.flush, 0.U, execute.c0_wen))
   writeback.c0_waddr := RegNext(execute.c0_waddr)
   writeback.c0_wdata := RegNext(execute.c0_wdata)
-  writeback.pc_now := RegNext(execute.pc_now)
   writeback.is_in_delayslot := RegNext(execute.is_in_delayslot)
-  val except_type = RegNext(execute.except_type)
+  val except_type = RegNext(Mux(hazard.flush, 0.U, execute.except_type))
 
   // data mem
   val data_mem = Module(new DataMem)
@@ -66,17 +65,16 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   // forward cp0 to here
   // todo 部分可写
   val Cause =
-  Mux(writeback.c0_wen_f && writeback.c0_waddr_f === CP0_CAUSE,
-    writeback.c0_wdata_f.asTypeOf(new Cause), writeback.c0_cause)
+  Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_CAUSE,
+    writeback.wm_c0_wdata.asTypeOf(new Cause), writeback.c0_cause)
   val EPC =
-    Mux(writeback.c0_wen_f && writeback.c0_waddr_f === CP0_EPC,
-      writeback.c0_wdata_f, writeback.c0_epc)
+    Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_EPC,
+      writeback.wm_c0_wdata, writeback.c0_epc)
   val Status =
-    Mux(writeback.c0_wen_f && writeback.c0_waddr_f === CP0_STATUS,
-      writeback.c0_wdata_f.asTypeOf(new Status), writeback.c0_status)
+    Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_STATUS,
+      writeback.wm_c0_wdata.asTypeOf(new Status), writeback.c0_status)
   // exception
   writeback.except_type := MuxCase(0.U, Array(
-    (writeback.pc_now === 0.U) -> 0.U,
     ((((Cause.IP7_IP2 ## Cause.IP1_IP0) & Status.IM7_IM0) =/= 0.U) && Status.EXL === 0.U && Status.IE === 1.U) -> EXCEPT_INT,
     except_type(8).asBool -> EXCEPT_SYSCALL,
     except_type(9).asBool -> EXCEPT_INST_INVALID,
@@ -92,6 +90,6 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
     val cnt = Counter(true.B, 100)
     printf(p"[log Memory]\n\tcycle = ${cnt._1}\n " +
       p"\tEXCEPT_TYPE = ${Hexadecimal(writeback.except_type)}, " +
-      p"EPC = ${Hexadecimal(writeback.c0_wdata_f)}\n")
+      p"EPC = ${Hexadecimal(writeback.wm_c0_wdata)}\n")
   }
 }

@@ -29,6 +29,5 @@ class Decode2Execute extends Bundle {
   val hi_wen = Output(Bool())
   val lo_wen = Output(Bool())
   val except_type = Output(UInt(SZ_EXCEPT_TYPE))
-  val pc_now = Output(UInt(32.W))
   val wdata = Input(UInt(32.W))
 }

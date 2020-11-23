@@ -19,20 +19,21 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
 
   // RegNext
   val pcp8 = RegNext(memory.pcp8)
-  val pc = pcp8 - 8.U
+  val pc_now = pcp8 - 8.U
   val sel_reg_wdata = RegNext(memory.sel_reg_wdata)
   val mem_rdata = RegNext(memory.mem_rdata)
   val alu_out = RegNext(memory.alu_out)
-  val hi_wen = RegNext(memory.hi_wen)
+  val hi_wen = RegNext(Mux(hazard.flush, 0.U, memory.hi_wen))
   val hi = RegNext(memory.hi)
-  val lo_wen = RegNext(memory.lo_wen)
+  val lo_wen = RegNext(Mux(hazard.flush, 0.U, memory.lo_wen))
   val lo = RegNext(memory.lo)
-  val c0_wen = RegNext(memory.c0_wen)
+  // 在writeback flush的信号，是memory中的，也就是触发异常的指令。它可能也要写CP0
+  // 但发生异常时，对CP0的修改应当是通过except_type给出的，所以这个wen也要被flush掉
+  val c0_wen = RegNext(Mux(hazard.flush, 0.U, memory.c0_wen))
   val c0_waddr = RegNext(memory.c0_waddr)
   val c0_wdata = RegNext(memory.c0_wdata)
   // 这些也要RegNext么？
   val except_type = RegNext(memory.except_type)
-  val pc_now = RegNext(memory.pc_now)
   val is_in_delayslot = RegNext(memory.is_in_delayslot)
 
   // hilo
@@ -90,7 +91,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   hazard.c0_waddr := c0_waddr
   execute.c0_data := c0_wdata
   // forward c0 to memory
-  memory.c0_wen_f := c0_wen
-  memory.c0_waddr_f := c0_waddr
-  memory.c0_wdata_f := c0_wdata
+  memory.wm_c0_wen := c0_wen
+  memory.wm_c0_waddr := c0_waddr
+  memory.wm_c0_wdata := c0_wdata
 }

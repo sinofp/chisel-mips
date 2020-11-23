@@ -42,17 +42,16 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     fetch.br_addr -> decode.br_addr,
     sel_move -> decode.sel_move,
     memory.pcp8 -> decode.pcp8,
-    memory.mem_wen -> Mux(hazard.flush, 0.U, decode.mem_wen),
+    memory.mem_wen -> Mux(hazard.flush, 0.U, decode.mem_wen), // 把flush逻辑提取成函数？整个动态作用域hazard.flush都不用写了
     memory.reg_wen -> Mux(hazard.flush, 0.U, decode.reg_wen),
     memory.sel_reg_wdata -> decode.sel_reg_wdata,
     memory.reg_waddr -> decode.reg_waddr,
     memory.mem_wdata -> decode.mem_wdata,
     memory.mem_size -> decode.mem_size,
-    memory.hi_wen -> decode.hi_wen,
-    memory.lo_wen -> decode.lo_wen,
-    memory.c0_wen -> decode.c0_wen,
+    memory.hi_wen -> Mux(hazard.flush, 0.U, decode.hi_wen),
+    memory.lo_wen -> Mux(hazard.flush, 0.U, decode.lo_wen),
+    memory.c0_wen -> Mux(hazard.flush, 0.U, decode.c0_wen),
     memory.c0_waddr -> decode.c0_addr,
-    memory.pc_now -> Mux(hazard.flush, 0.U, decode.pc_now),
     memory.is_in_delayslot -> Mux(hazard.flush, false.B, br_t =/= BR_TYPE_NO), // todo J 的延迟槽
     except_type -> Mux(hazard.flush, 0.U, decode.except_type),
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
@@ -81,7 +80,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     import div.io._
     dividend := num1
     divider := num2
-    start := cu_div
+    start := cu_div && !hazard.flush // todo 这取消对么
     sign := alu_fn === FN_DIV
     hazard.div_not_ready := cu_div && !ready
   }
@@ -119,7 +118,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   writeback.c0_raddr := memory.c0_waddr // 都是rd
   hazard.c0_raddr := writeback.c0_raddr
 
-  def c0 = MuxCase(writeback.c0_rdata, Array(
+  private def c0 = MuxCase(writeback.c0_rdata, Array(
     (hazard.forward_c0 === FORWARD_C0_MEM) -> memory.c0_data,
     (hazard.forward_c0 === FORWARD_HILO_WB) -> writeback.c0_data,
   ))

@@ -23,7 +23,6 @@ class Execute2Memory extends Bundle {
   val c0_waddr = Input(UInt(5.W))
   val c0_wdata = Input(UInt(32.W))
   val except_type = Input(UInt(SZ_EXCEPT_TYPE))
-  val pc_now = Input(UInt(32.W))
   val is_in_delayslot = Input(Bool())
   val hi_forward = Output(UInt(32.W))
   val lo_forward = Output(UInt(32.W))
