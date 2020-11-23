@@ -77,6 +77,7 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
     except_type(10).asBool -> EXCEPT_TRAP,
     except_type(11).asBool -> EXCEPT_OVERFLOW,
     except_type(12).asBool -> EXCEPT_ERET,
+    except_type(13).asBool -> EXCEPT_BREAK,
   ))
   hazard.EPC := EPC
   hazard.except_type := writeback.except_type

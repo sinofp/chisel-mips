@@ -55,6 +55,7 @@ object CP0 {
   val EXCEPT_TRAP = 0xd.U(SZ_EXCEPT_TYPE)
   val EXCEPT_OVERFLOW = 0xc.U(SZ_EXCEPT_TYPE)
   val EXCEPT_ERET = 0xe.U(SZ_EXCEPT_TYPE)
+  val EXCEPT_BREAK = 0x10.U(SZ_EXCEPT_TYPE)
 }
 
 import cpu.writeback.CP0._
@@ -138,6 +139,14 @@ class CP0(implicit c: Config = DefCon) extends MultiIOModule {
         Cause.BD := is_in_delayslot
         Status.EXL := 1.U
         Cause.ExcCode := "b01000".U
+      }
+    }
+    is(EXCEPT_BREAK) {
+      when(Status.EXL === 0.U) {
+        EPC := pc_now - Mux(is_in_delayslot, 4.U, 0.U)
+        Cause.BD := is_in_delayslot
+        Status.EXL := 1.U
+        Cause.ExcCode := "b01001".U // todo 减少重复代码
       }
     }
     is(EXCEPT_INST_INVALID) {

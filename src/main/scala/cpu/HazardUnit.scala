@@ -63,6 +63,7 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   fetch.newpc := MuxLookup(memory.except_type, 0.U, Array(
     EXCEPT_INT -> entry,
     EXCEPT_SYSCALL -> entry,
+    EXCEPT_BREAK -> entry,
     EXCEPT_INST_INVALID -> entry,
     EXCEPT_TRAP -> entry,
     EXCEPT_OVERFLOW -> entry,
