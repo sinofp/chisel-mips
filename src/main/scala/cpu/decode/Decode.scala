@@ -107,4 +107,5 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
     SEL_REG_WADDR_31 -> 31.U,
   ))
   execute.except_type := Cat(0.U(18.W), is_break, is_eret, 0.U(2.W), inst_invalid, is_syscall, 0.U(8.W))
+  execute.is_in_delayslot := RegNext(sel_imm === SEL_IMM_J | execute.br_type =/= BR_TYPE_NO)
 }

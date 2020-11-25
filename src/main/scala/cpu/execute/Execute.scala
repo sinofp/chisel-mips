@@ -52,7 +52,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     memory.lo_wen -> Mux(hazard.flush, 0.U, decode.lo_wen),
     memory.c0_wen -> Mux(hazard.flush, 0.U, decode.c0_wen),
     memory.c0_waddr -> decode.c0_addr,
-    memory.is_in_delayslot -> Mux(hazard.flush, false.B, br_t =/= BR_TYPE_NO), // todo J 的延迟槽
+    memory.is_in_delayslot -> Mux(hazard.flush, false.B, decode.is_in_delayslot),
     except_type -> Mux(hazard.flush, 0.U, decode.except_type),
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
 
