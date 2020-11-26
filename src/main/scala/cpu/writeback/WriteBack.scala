@@ -94,4 +94,6 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   memory.wm_c0_wen := c0_wen
   memory.wm_c0_waddr := c0_waddr
   memory.wm_c0_wdata := c0_wdata
+
+  core.junk_output := decode.wdata | hilo.io.lo | memory.alu_out | memory.mem_rdata | c0_wdata
 }

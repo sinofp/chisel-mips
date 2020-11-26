@@ -17,5 +17,5 @@ class Div(implicit c: Config = DefCon) extends BlackBox with HasBlackBoxResource
     val quotient = Output(UInt(32.W))
     val remainder = Output(UInt(32.W))
   })
-  addResource("/div.v")
+  addResource("/Div.v")
 }

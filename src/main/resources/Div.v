@@ -1,4 +1,4 @@
-module div (
+module Div (
     input         clk,
     input         start,
     input         sign,

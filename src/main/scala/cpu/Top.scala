@@ -3,7 +3,7 @@
 package cpu
 
 import chisel3._
-import chisel3.stage.ChiselStage
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import chisel3.util.experimental.BoringUtils
 import cpu.decode.Decode
 import cpu.execute.Execute
@@ -55,5 +55,6 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
 
 object Top extends App {
   //  implicit val c: Config = Config(debugTReg = true)
-  new ChiselStage emitVerilog new Top
+  //  new ChiselStage emitVerilog new Top
+  new ChiselStage execute(Array("--target-dir", "chisel-mips.srcs/sources_1/new"), Seq(ChiselGeneratorAnnotation(() => new Top)))
 }
