@@ -5,6 +5,8 @@ package cpu.util
 import chisel3._
 import chisel3.util._
 
+import scala.math._
+
 object Chisel3IsBad {
 
   implicit class SubFieldAssign(lhs: Data) {
@@ -30,4 +32,5 @@ object Chisel3IsBad {
     }
   }
 
+  def log2I(x: Int): Int = (log10(x) / log10(2)).toInt
 }
