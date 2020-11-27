@@ -6,12 +6,12 @@ import chisel3._
 import chisel3.util.Counter
 import chisel3.util.experimental.BoringUtils
 import cpu.port.debug.TRegWindow
-import cpu.port.stage.WriteBack2Decode
+import cpu.port.stage.Decode2WriteBack
 import cpu.util.{Config, DefCon}
 
 class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {
   require(readPorts >= 0)
-  val in = IO(new WriteBack2Decode)
+  val in = IO(Flipped(new Decode2WriteBack))
   val io = IO(new Bundle() {
     val raddr = Input(Vec(readPorts, UInt(5.W)))
     val rdata = Output(Vec(readPorts, UInt(32.W)))

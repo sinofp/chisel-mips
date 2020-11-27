@@ -3,7 +3,6 @@
 package cpu.port.stage
 
 import chisel3._
+import cpu.port.WData
 
-class Decode2Memory extends Bundle {
-  val wdata = Input(UInt(32.W))
-}
+class Memory2Decode extends Bundle with WData

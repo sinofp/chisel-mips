@@ -6,14 +6,14 @@ import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.Decode2Hazard
-import cpu.port.stage.{Decode2Execute, Decode2Fetch, Decode2Memory, WriteBack2Decode}
+import cpu.port.stage.{Decode2Execute, Decode2Fetch, Decode2WriteBack, Memory2Decode}
 import cpu.util.{Config, DefCon}
 
 class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val fetch = IO(new Decode2Fetch)
   val execute = IO(new Decode2Execute)
-  val memory = IO(new Decode2Memory)
-  val writeBack = IO(new WriteBack2Decode)
+  val memory = IO(Flipped(new Memory2Decode))
+  val writeBack = IO(Flipped(new Decode2WriteBack))
   val hazard = IO(Flipped(new Decode2Hazard(2)))
 
   val inst = Wire(UInt(32.W))
@@ -30,14 +30,14 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
     execute.alu_n := alu_n
     execute.mul := mul
     execute.div := div
-    execute.mem_wen := mem_wen
-    execute.reg_wen := reg_wen
+    execute.mem.wen := mem_wen
+    execute.rf.wen := reg_wen
     execute.sel_reg_wdata := sel_reg_wdata
     execute.br_type := br_type
-    execute.mem_size := mem_size
-    execute.hi_wen := hi_wen
-    execute.lo_wen := lo_wen
-    execute.c0_wen := c0_wen
+    execute.mem.size := mem_size
+    execute.hi.wen := hi_wen
+    execute.lo.wen := lo_wen
+    execute.c0.wen := c0_wen
     execute.sel_move := sel_move
   }
   val sel_alu1 = cu.ctrl.sel_alu1
@@ -92,8 +92,8 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   // J型指令中，如果alu1是SA，那就是JR，反之是J —— 多加CtrlSig？
   fetch.j_addr := Mux(sel_alu1 === SEL_ALU1_SA, rdata1, imm_ext)
   fetch.jump := sel_imm === SEL_IMM_J
-  execute.c0_addr := rd
-  execute.mem_wdata := rdata2
+  execute.c0.waddr := rd
+  execute.mem.wdata := rdata2
   execute.br_addr := pcp4 + imm_ext // 这个是不是应该放在imm_ext里？
   execute.pcp8 := pcp4 + 4.U // for link
   execute.num1 := Mux(sel_alu1 === SEL_ALU1_SA, imm_ext, rdata1)
@@ -101,7 +101,7 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
     SEL_ALU2_IMM -> imm_ext,
     SEL_ALU2_RT -> rdata2
   ))
-  execute.reg_waddr := MuxLookup(sel_reg_waddr, 0.U(32.W), Array(
+  execute.rf.waddr := MuxLookup(sel_reg_waddr, 0.U(32.W), Array(
     SEL_REG_WADDR_RD -> rd,
     SEL_REG_WADDR_RT -> rt,
     SEL_REG_WADDR_31 -> 31.U,

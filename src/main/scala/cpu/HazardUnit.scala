@@ -19,9 +19,9 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
 
   // RegFile 数据前推
   val forward_port = (i: Int) => MuxCase(FORWARD_NO, Array(
-    (execute.wen && (execute.waddr =/= 0.U) && decode.raddr(i) === execute.waddr) -> FORWARD_EXE,
-    (memory.wen && (memory.waddr =/= 0.U) && decode.raddr(i) === memory.waddr) -> FORWARD_MEM,
-    (writeback.wen && (writeback.waddr =/= 0.U) && decode.raddr(i) === writeback.waddr) -> FORWARD_WB,
+    (execute.rf.wen && (execute.rf.waddr =/= 0.U) && decode.raddr(i) === execute.rf.waddr) -> FORWARD_EXE,
+    (memory.rf.wen && (memory.rf.waddr =/= 0.U) && decode.raddr(i) === memory.rf.waddr) -> FORWARD_MEM,
+    (writeback.rf.wen && (writeback.rf.waddr =/= 0.U) && decode.raddr(i) === writeback.rf.waddr) -> FORWARD_WB,
   ))
   for (i <- 0 until readPorts) {
     decode.forward(i) := forward_port(i)
@@ -29,18 +29,18 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
 
   // cp0数据前推
   execute.forward_c0 := MuxCase(FORWARD_C0_NO, Array(
-    (memory.c0_wen && memory.c0_waddr === execute.c0_raddr) -> FORWARD_C0_MEM,
-    (writeback.c0_wen && writeback.c0_waddr === execute.c0_raddr) -> FORWARD_C0_WB,
+    (memory.c0.wen && memory.c0.waddr === execute.c0_raddr) -> FORWARD_C0_MEM,
+    (writeback.c0.wen && writeback.c0.waddr === execute.c0_raddr) -> FORWARD_C0_WB,
   ))
 
   // HILO 数据前推到 Execute，主要为了 mfhi $1 后面的指令用到 $1
   execute.forward_hi := MuxCase(FORWARD_HILO_NO, Array(
-    (memory.hi_wen && !execute.hi_wen) -> FORWARD_HILO_MEM,
-    (writeback.hi_wen && !execute.hi_wen) -> FORWARD_HILO_WB,
+    (memory.hi.wen && !execute.hi.wen) -> FORWARD_HILO_MEM,
+    (writeback.hi.wen && !execute.hi.wen) -> FORWARD_HILO_WB,
   ))
   execute.forward_lo := MuxCase(FORWARD_HILO_NO, Array(
-    (memory.lo_wen && !execute.lo_wen) -> FORWARD_HILO_MEM,
-    (writeback.lo_wen && !execute.lo_wen) -> FORWARD_HILO_WB,
+    (memory.lo.wen && !execute.lo.wen) -> FORWARD_HILO_MEM,
+    (writeback.lo.wen && !execute.lo.wen) -> FORWARD_HILO_WB,
   ))
 
   // exception

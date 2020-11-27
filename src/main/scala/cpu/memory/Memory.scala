@@ -6,30 +6,30 @@ import chisel3._
 import chisel3.util.{Counter, MuxCase}
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.Memory2Hazard
-import cpu.port.stage.{Decode2Memory, Execute2Memory, Memory2WriteBack}
+import cpu.port.stage.{Execute2Memory, Memory2Decode, Memory2WriteBack}
 import cpu.util.{Config, DefCon}
 import cpu.writeback.CP0._
 import cpu.writeback.{Cause, Status}
 
 class Memory(implicit c: Config = DefCon) extends MultiIOModule {
-  val decode = IO(Flipped(new Decode2Memory))
+  val decode = IO(new Memory2Decode)
   val execute = IO(new Execute2Memory)
   val writeback = IO(new Memory2WriteBack)
   val hazard = IO(Flipped(new Memory2Hazard))
 
   // RegNext
   writeback.pcp8 := RegNext(execute.pcp8)
-  writeback.reg_wen := RegNext(Mux(hazard.flush, 0.U, execute.reg_wen), 0.U)
+  writeback.rf.wen := RegNext(Mux(hazard.flush, 0.U, execute.rf.wen), 0.U)
   writeback.sel_reg_wdata := RegNext(execute.sel_reg_wdata)
-  writeback.reg_waddr := RegNext(execute.reg_waddr)
+  writeback.rf.waddr := RegNext(execute.rf.waddr)
   writeback.alu_out := RegNext(execute.alu_out)
-  writeback.hi_wen := RegNext(Mux(hazard.flush, 0.U, execute.hi_wen))
+  writeback.hi.wen := RegNext(Mux(hazard.flush, 0.U, execute.hi.wen))
   writeback.hi := RegNext(execute.hi)
-  writeback.lo_wen := RegNext(Mux(hazard.flush, 0.U, execute.lo_wen))
+  writeback.lo.wen := RegNext(Mux(hazard.flush, 0.U, execute.lo.wen))
   writeback.lo := RegNext(execute.lo)
-  writeback.c0_wen := RegNext(Mux(hazard.flush, 0.U, execute.c0_wen))
-  writeback.c0_waddr := RegNext(execute.c0_waddr)
-  writeback.c0_wdata := RegNext(execute.c0_wdata)
+  writeback.c0.wen := RegNext(Mux(hazard.flush, 0.U, execute.c0.wen))
+  writeback.c0.waddr := RegNext(execute.c0.waddr)
+  writeback.c0.wdata := RegNext(execute.c0.wdata)
   writeback.is_in_delayslot := RegNext(execute.is_in_delayslot)
   val except_type = RegNext(Mux(hazard.flush, 0.U, execute.except_type))
 
@@ -37,25 +37,25 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val data_mem = Module(new DataMem)
   locally {
     import data_mem.io._
-    wen := Mux(writeback.except_type =/= 0.U, false.B, RegNext(execute.mem_wen, 0.U))
+    wen := Mux(writeback.except_type =/= 0.U, false.B, RegNext(execute.mem.wen, 0.U))
     addr := RegNext(execute.alu_out)
-    wdata := RegNext(execute.mem_wdata)
+    wdata := RegNext(execute.mem.wdata)
     writeback.mem_rdata := rdata
-    size := execute.mem_size
+    size := execute.mem.size
   }
 
   // forward reg
-  hazard.wen := writeback.reg_wen
-  hazard.waddr := writeback.reg_waddr
+  hazard.rf.wen := writeback.rf.wen
+  hazard.rf.waddr := writeback.rf.waddr
   // forward hilo
-  hazard.hi_wen := writeback.hi_wen
-  hazard.lo_wen := writeback.lo_wen
+  hazard.hi.wen := writeback.hi.wen
+  hazard.lo.wen := writeback.lo.wen
   // forward cp0 to execute
-  hazard.c0_wen := writeback.c0_waddr
-  hazard.c0_waddr := writeback.c0_waddr
-  execute.hi_forward := writeback.hi
-  execute.lo_forward := writeback.lo
-  execute.c0_data := writeback.c0_wdata
+  hazard.c0.wen := writeback.c0.waddr
+  hazard.c0.waddr := writeback.c0.waddr
+  execute.fwd_hi.wdata := writeback.hi.wdata
+  execute.fwd_lo.wdata := writeback.lo.wdata
+  execute.fwd_c0.wdata := writeback.c0.wdata
   decode.wdata := MuxCase(0.U, Array(
     (writeback.sel_reg_wdata === SEL_REG_WDATA_EX) -> writeback.alu_out,
     (writeback.sel_reg_wdata === SEL_REG_WDATA_LNK) -> writeback.pcp8,
@@ -64,11 +64,11 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
 
   // forward cp0 to here
   // 不能直接在Input上:=，所以得用asTypeOf创建一个Wire，在Wire上:=
-  val Cause = Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_CAUSE,
-    writeback.c0_cause.asTypeOf(new Cause).update(writeback.wm_c0_wdata), writeback.c0_cause)
-  val EPC = Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_EPC, writeback.wm_c0_wdata, writeback.c0_epc)
-  val Status = Mux(writeback.wm_c0_wen && writeback.wm_c0_waddr === CP0_STATUS,
-    writeback.c0_status.asTypeOf(new Status).update(writeback.wm_c0_wdata), writeback.c0_status)
+  val Cause = Mux(writeback.fwd_c0.wen && writeback.fwd_c0.waddr === CP0_CAUSE,
+    writeback.c0_cause.asTypeOf(new Cause).update(writeback.fwd_c0.wdata), writeback.c0_cause)
+  val EPC = Mux(writeback.fwd_c0.wen && writeback.fwd_c0.waddr === CP0_EPC, writeback.fwd_c0.wdata, writeback.c0_epc)
+  val Status = Mux(writeback.fwd_c0.wen && writeback.fwd_c0.waddr === CP0_STATUS,
+    writeback.c0_status.asTypeOf(new Status).update(writeback.fwd_c0.wdata), writeback.c0_status)
   // exception
   writeback.except_type := MuxCase(0.U, Array(
     ((((Cause.IP7_IP2 ## Cause.IP1_IP0) & Status.IM7_IM0) =/= 0.U) && Status.EXL === 0.U && Status.IE === 1.U) -> EXCEPT_INT,
@@ -87,6 +87,6 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
     val cnt = Counter(true.B, 100)
     printf(p"[log Memory]\n\tcycle = ${cnt._1}\n " +
       p"\tEXCEPT_TYPE = ${Hexadecimal(writeback.except_type)}, " +
-      p"EPC = ${Hexadecimal(writeback.wm_c0_wdata)}\n")
+      p"EPC = ${Hexadecimal(writeback.fwd_c0.wdata)}\n")
   }
 }

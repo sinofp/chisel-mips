@@ -42,16 +42,16 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     fetch.br_addr -> decode.br_addr,
     sel_move -> decode.sel_move,
     memory.pcp8 -> decode.pcp8,
-    memory.mem_wen -> Mux(hazard.flush, 0.U, decode.mem_wen), // 把flush逻辑提取成函数？整个动态作用域hazard.flush都不用写了
-    memory.reg_wen -> Mux(hazard.flush, 0.U, decode.reg_wen),
+    memory.mem.wen -> Mux(hazard.flush, 0.U, decode.mem.wen), // 把flush逻辑提取成函数？整个动态作用域hazard.flush都不用写了
+    memory.rf.wen -> Mux(hazard.flush, 0.U, decode.rf.wen),
     memory.sel_reg_wdata -> decode.sel_reg_wdata,
-    memory.reg_waddr -> decode.reg_waddr,
-    memory.mem_wdata -> decode.mem_wdata,
-    memory.mem_size -> decode.mem_size,
-    memory.hi_wen -> Mux(hazard.flush, 0.U, decode.hi_wen),
-    memory.lo_wen -> Mux(hazard.flush, 0.U, decode.lo_wen),
-    memory.c0_wen -> Mux(hazard.flush, 0.U, decode.c0_wen),
-    memory.c0_waddr -> decode.c0_addr,
+    memory.rf.waddr -> decode.rf.waddr,
+    memory.mem.wdata -> decode.mem.wdata,
+    memory.mem.size -> decode.mem.size,
+    memory.hi.wen -> Mux(hazard.flush, 0.U, decode.hi.wen),
+    memory.lo.wen -> Mux(hazard.flush, 0.U, decode.lo.wen),
+    memory.c0.wen -> Mux(hazard.flush, 0.U, decode.c0.wen),
+    memory.c0.waddr -> decode.c0.waddr,
     memory.is_in_delayslot -> Mux(hazard.flush, false.B, decode.is_in_delayslot),
     except_type -> Mux(hazard.flush, 0.U, decode.except_type),
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
@@ -65,8 +65,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     in2 := num2
     memory.alu_out := MuxCase(out, Array(
       alu_n -> ~out,
-      (sel_move === SEL_MOVE_HI) -> memory.hi,
-      (sel_move === SEL_MOVE_LO) -> memory.lo,
+      (sel_move === SEL_MOVE_HI) -> memory.hi.wdata,
+      (sel_move === SEL_MOVE_LO) -> memory.lo.wdata,
       (sel_move === SEL_MOVE_C0) -> c0,
     ))
     cmp_out := DontCare
@@ -107,36 +107,36 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   hazard.branch := fetch.branch
 
   // forward
-  hazard.wen := memory.reg_wen
-  hazard.waddr := memory.reg_waddr
-  hazard.hi_wen := memory.hi_wen
-  hazard.lo_wen := memory.lo_wen
+  hazard.rf.wen := memory.rf.wen
+  hazard.rf.waddr := memory.rf.waddr
+  hazard.hi.wen := memory.hi.wen
+  hazard.lo.wen := memory.lo.wen
   decode.wdata := MuxLookup(memory.sel_reg_wdata, 0.U, Array(
     SEL_REG_WDATA_EX -> memory.alu_out,
     SEL_REG_WDATA_LNK -> memory.pcp8,
   ))
-  writeback.c0_raddr := memory.c0_waddr // 都是rd
+  writeback.c0_raddr := memory.c0.waddr // 都是rd
   hazard.c0_raddr := writeback.c0_raddr
 
-  private def c0 = MuxCase(writeback.c0_rdata, Array(
-    (hazard.forward_c0 === FORWARD_C0_MEM) -> memory.c0_data,
-    (hazard.forward_c0 === FORWARD_HILO_WB) -> writeback.c0_data,
+  private def c0 = MuxLookup(hazard.forward_c0, writeback.c0_rdata, Array(
+    FORWARD_C0_MEM -> memory.fwd_c0.wdata,
+    FORWARD_HILO_WB -> writeback.c0_data,
   ))
 
   // misc output
-  memory.hi := MuxCase(num1, Array( // 默认num1是mthi, rs读出来的值 -- 要加上em.hi_wen做条件限定么？
+  memory.hi.wdata := MuxCase(num1, Array( // 默认num1是mthi, rs读出来的值 -- 要加上em.hi_wen做条件限定么？
     cu_div -> div.io.quotient,
     cu_mul -> mul.io.product(63, 32),
-    (hazard.forward_hi === FORWARD_HILO_MEM) -> memory.hi_forward, // 前推时都是em.hi_wen=0的时候，所以改了向后传的hi也无所谓
-    (hazard.forward_hi === FORWARD_HILO_WB) -> writeback.hi,
+    (hazard.forward_hi === FORWARD_HILO_MEM) -> memory.fwd_hi.wdata, // 前推时都是em.hi_wen=0的时候，所以改了向后传的hi也无所谓
+    (hazard.forward_hi === FORWARD_HILO_WB) -> writeback.hi.wdata,
   ))
-  memory.lo := MuxCase(num1, Array(
+  memory.lo.wdata := MuxCase(num1, Array(
     cu_div -> div.io.quotient,
     cu_mul -> mul.io.product(31, 0),
-    (hazard.forward_lo === FORWARD_HILO_MEM) -> memory.lo_forward,
-    (hazard.forward_lo === FORWARD_HILO_WB) -> writeback.lo,
+    (hazard.forward_lo === FORWARD_HILO_MEM) -> memory.fwd_lo.wdata,
+    (hazard.forward_lo === FORWARD_HILO_WB) -> writeback.lo.wdata,
   ))
-  memory.c0_wdata := num2 // $rt
+  memory.c0.wdata := num2 // $rt
   memory.except_type := Cat(except_type(31, 12), overflow, trap, except_type(9, 0))
   // todo overflow
 
