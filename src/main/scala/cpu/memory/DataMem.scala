@@ -5,16 +5,11 @@ package cpu.memory
 import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
+import cpu.port.core.Core2DataMem
 import cpu.util.{Config, DefCon}
 
 class DataMem(implicit c: Config = DefCon) extends Module {
-  val io = IO(new Bundle() {
-    val addr = Input(UInt(32.W))
-    val wen = Input(Bool())
-    val wdata = Input(UInt(32.W))
-    val size = Input(UInt(SZ_MEM_TYPE))
-    val rdata = Output(UInt(32.W))
-  })
+  val io = IO(Flipped(new Core2DataMem))
 
   val mem = SyncReadMem(256, UInt(32.W))
 

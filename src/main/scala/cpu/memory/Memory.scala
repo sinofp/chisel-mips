@@ -5,6 +5,7 @@ package cpu.memory
 import chisel3._
 import chisel3.util.{Counter, MuxCase}
 import cpu.decode.CtrlSigDef._
+import cpu.port.core.Core2DataMem
 import cpu.port.hazard.Memory2Hazard
 import cpu.port.stage.{Execute2Memory, Memory2Decode, Memory2WriteBack}
 import cpu.util.{Config, DefCon}
@@ -16,6 +17,7 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val execute = IO(new Execute2Memory)
   val writeback = IO(new Memory2WriteBack)
   val hazard = IO(Flipped(new Memory2Hazard))
+  val data_mem = IO(new Core2DataMem)
 
   // RegNext
   writeback.pcp8 := RegNext(execute.pcp8)
@@ -34,9 +36,12 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val except_type = RegNext(Mux(hazard.flush, 0.U, execute.except_type))
 
   // data mem
-  val data_mem = Module(new DataMem)
+  //  val data_mem = Module(new DataMem)
+  //  locally {
+  //    import data_mem.io._
+  //  }
   locally {
-    import data_mem.io._
+    import data_mem._
     wen := Mux(writeback.except_type =/= 0.U, false.B, RegNext(execute.mem.wen, 0.U))
     addr := RegNext(execute.alu_out)
     wdata := RegNext(execute.mem.wdata)

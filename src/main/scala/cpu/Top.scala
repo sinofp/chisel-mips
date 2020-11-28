@@ -5,47 +5,21 @@ package cpu
 import chisel3._
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import chisel3.util.experimental.BoringUtils
-import cpu.decode.Decode
-import cpu.execute.Execute
-import cpu.fetch.Fetch
-import cpu.memory.Memory
-import cpu.port.core.Core2WriteBack
+import cpu.fetch.InstMem
+import cpu.memory.DataMem
 import cpu.port.debug.TRegWindow
 import cpu.util.{Config, DefCon}
-import cpu.writeback.WriteBack
 
 class Top(implicit c: Config = DefCon) extends MultiIOModule {
-  val io = IO(new Bundle() {
-    val interrupt = new Core2WriteBack
-  })
+  val core = Module(new Core)
+  core.io.interrupt.int := DontCare
 
-  val fetch = Module(new Fetch)
-  val decode = Module(new Decode)
-  val execute = Module(new Execute)
-  val memory = Module(new Memory)
-  val writeback = Module(new WriteBack)
-  val hazard = Module(new HazardUnit(2))
+  val inst_mem = Module(new InstMem)
+  inst_mem.io <> core.inst_mem
 
-  // br & j
-  fetch.execute <> execute.fetch
-  fetch.decode <> decode.fetch
+  val data_mem = Module(new DataMem)
+  data_mem.io <> core.data_mem
 
-  decode.writeBack <> writeback.decode
-  decode.memory <> memory.decode
-  execute.decode <> decode.execute
-  execute.memory <> memory.execute
-  execute.writeback <> writeback.execute
-  writeback.memory <> memory.writeback
-
-  hazard.fetch <> fetch.hazard
-  hazard.decode <> decode.hazard
-  hazard.execute <> execute.hazard
-  hazard.memory <> memory.hazard
-  hazard.writeback <> writeback.hazard
-
-  io.interrupt <> writeback.core
-
-  // debug
   val t_regs = if (c.dTReg) Some(IO(Output(new TRegWindow()))) else None
   if (c.dTReg) {
     t_regs.get.getElements.foreach(_ := 1.U)

@@ -23,7 +23,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "01285022", // sub $t2, $t1, $t0
       "0540fffd", // bltz $t2, loop，后面全是初始化的NOP，延迟槽不用担心
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, dRegFile = true, dBrUnit = true, dExecute = true, dTReg = true)
+    implicit val c: Config = Config(insts = insts, dRegFile = true, dBuiltinMem = true, dBrUnit = true, dExecute = true, dTReg = true)
     test(new Top) { c =>
       c.clock.step(99)
       c.t_regs.get.t0.expect(100.U)
@@ -60,7 +60,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "1000ffff",
       "00000000"
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts,
+    implicit val c: Config = Config(insts = insts, dBuiltinMem = true,
       dFetch = true, dTReg = true, dExcept = true)
     test(new Top) { c =>
       c.clock.step(14)
@@ -80,7 +80,8 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "01400011", // mthi $t2
       "00006010", // mfhi $t4
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, dRegFile = true, dTReg = true, dHILO = true, dExecute = true, dForward = true)
+    implicit val c: Config = Config(insts = insts, dRegFile = true, dTReg = true,
+      dHILO = true, dExecute = true, dForward = true, dBuiltinMem = true)
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t2.expect("h1234".U)
@@ -99,7 +100,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       "200a0002", // addi $t2, $0, 2 -- 跳过
       "200b0003", // aaa: addi $t3, $0, 3
     ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, dRegFile = true, dTReg = true)
+    implicit val c: Config = Config(insts = insts, dRegFile = true, dBuiltinMem = true, dTReg = true)
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t2.expect(0.U)
@@ -107,23 +108,23 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
     }
   }
 
-  it should "move to/from CP0" in {
-    val insts = Array(
-      "2009003c", // addi $t1, $0, 60
-      "40895800", // mtc0 $t1, $11
-      "400a5800", // mfc0 $t2, $11
-      "014a5820", // add $t3, $t2, $t2
-    ).map("h" + _).map(_.U)
-    implicit val c: Config = Config(insts = insts, dTReg = true, dCP0 = true)
-    test(new Top) { c =>
-      c.clock.step(7)
-      c.t_regs.get.t2.expect(60.U)
-      c.clock.step(1)
-      c.t_regs.get.t3.expect(120.U)
-      c.clock.step(53) // count 到60的下一周期，timer_int的1被写入
-      c.io.interrupt.timer_int.expect(true.B)
-    }
-  }
+//  it should "move to/from CP0" in {
+//    val insts = Array(
+//      "2009003c", // addi $t1, $0, 60
+//      "40895800", // mtc0 $t1, $11
+//      "400a5800", // mfc0 $t2, $11
+//      "014a5820", // add $t3, $t2, $t2
+//    ).map("h" + _).map(_.U)
+//    implicit val c: Config = Config(insts = insts, dTReg = true, dBuiltinMem = true, dCP0 = true)
+//    test(new Top) { c =>
+//      c.clock.step(7)
+//      c.t_regs.get.t2.expect(60.U)
+//      c.clock.step(1)
+//      c.t_regs.get.t3.expect(120.U)
+//      c.clock.step(53) // count 到60的下一周期，timer_int的1被写入
+//      c.io.interrupt.timer_int.expect(true.B)
+//    }
+//  }
 
   it should "handle syscall and eret" in {
     val writer = new PrintWriter(new File("mips.S"))
@@ -145,7 +146,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
     "java -jar Mars4_5.jar mc CompactTextAtZero a dump .text HexText inst.txt mips.S" !
     val source = Source.fromFile("inst.txt")
     val insts = try source.getLines.toArray.map("h" + _).map(_.U) finally source.close
-    implicit val c: Config = Config(insts = insts, dTReg = true,
+    implicit val c: Config = Config(insts = insts, dTReg = true, dBuiltinMem = true,
       dExcept = true, dExceptEntry = Some((2 * 4).U), dFetch = true)
     test(new Top) { c =>
       c.clock.step(7)

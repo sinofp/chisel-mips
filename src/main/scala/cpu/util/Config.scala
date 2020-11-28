@@ -24,6 +24,7 @@ case class Config(
     dHILO: Boolean = false,
     dTReg: Boolean = false,
     dForward: Boolean = false,
+    dBuiltinMem: Boolean = false,
     insts: Seq[UInt] = Seq(
       "20080064",
       "32290001",

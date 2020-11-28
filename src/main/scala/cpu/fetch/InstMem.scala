@@ -3,13 +3,11 @@
 package cpu.fetch
 
 import chisel3._
+import cpu.port.core.Core2InstMem
 import cpu.util.{Config, DefCon}
 
 class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
-  val io = IO(new Bundle() {
-    val pc = Input(UInt(32.W))
-    val inst = Output(UInt(32.W))
-  })
+  val io = IO(Flipped(new Core2InstMem))
 
   val mem = VecInit(c.insts ++ Seq.fill(32 - c.insts.length)(0.U(32.W)))
 
