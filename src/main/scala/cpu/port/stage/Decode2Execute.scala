@@ -30,4 +30,5 @@ class Decode2Execute extends Bundle {
   val except_type = Output(UInt(SZ_EXCEPT_TYPE))
   val is_in_delayslot = Output(Bool())
   val wdata = Input(UInt(32.W))
+  val check_overflow = Output(Bool())
 }

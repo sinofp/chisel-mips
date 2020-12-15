@@ -32,18 +32,19 @@ class CtrlSigs extends Bundle {
   val is_syscall = Bool()
   val is_eret = Bool()
   val is_break = Bool()
+  val check_overflow = Bool()
 
   private implicit def uint2B(x: UInt): B = B(x)
 
   private implicit def int2B(x: Int): B = B(x.U)
 
   private val table: Array[(B, List[B])] = Array(
-    ADD -> r(FN_ADD),
-    ADDI -> i(FN_ADD),
+    ADD -> r(FN_ADD, check_overflow = 1),
+    ADDI -> i(FN_ADD, check_overflow = 1),
     ADDU -> r(FN_ADD),
     ADDIU -> r(FN_ADD),
-    SUB -> r(FN_SUB),
-    SUBU -> r(FN_SUB),
+    SUB -> r(FN_SUB, check_overflow = 1),
+    SUBU -> r(FN_SUB, check_overflow = 1),
     SLT -> r(FN_SLT),
     SLTI -> i(FN_SLT),
     SLTU -> r(FN_SLTU),
@@ -100,20 +101,20 @@ class CtrlSigs extends Bundle {
     val decoder = DecodeLogic(inst, dft(inst_invalid = 1), table)
     val sigs = Seq(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen,
       reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load,
-      hi_wen, lo_wen, c0_wen, sel_move, inst_invalid, is_eret, is_syscall, is_break)
+      hi_wen, lo_wen, c0_wen, sel_move, inst_invalid, is_eret, is_syscall, is_break, check_overflow)
     sigs zip decoder foreach { case (s, d) => s := d }
     this
   }
 
-  private def r(alu_fn: B, alu_n: B = 0): List[B] = dft(alu_fn = alu_fn, alu_n = alu_n, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_EX)
+  private def r(alu_fn: B, alu_n: B = 0, check_overflow: B = 0): List[B] = dft(alu_fn = alu_fn, alu_n = alu_n, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_EX, check_overflow = check_overflow)
 
   private def mf(hi: Boolean = false, lo: Boolean = false, c0: Boolean = false): List[B] = dft(reg_wen = 1, sel_reg_waddr = if (c0) SEL_REG_WADDR_RT else SEL_REG_WADDR_RD, sel_reg_wdata = SEL_REG_WDATA_EX, sel_move = if (c0) SEL_MOVE_C0 else if (hi) SEL_MOVE_HI else SEL_MOVE_LO)
 
   private def mt(hi: Int = 0, lo: Int = 0, c0: Int = 0): List[B] = dft(hi_wen = hi, lo_wen = lo, c0_wen = c0)
 
-  private def dft(sel_alu1: B = SEL_ALU1_RS, sel_alu2: B = SEL_ALU2_RT, sel_imm: B = SEL_IMM_U, alu_fn: B = FN_X, mul: B = 0, div: B = 0, mem_wen: B = 0, reg_wen: B = 0, sel_reg_waddr: B = SEL_REG_WADDR_RD, sel_reg_wdata: B = SEL_REG_WDATA_EX, br_type: B = BR_TYPE_NO, mem_size: B = MEM_W, load: B = 0, hi_wen: B = 0, lo_wen: B = 0, alu_n: B = 0, c0_wen: B = 0, sel_move: B = SEL_MOVE_NO, inst_invalid: B = 0, is_eret: B = 0, is_syscall: B = 0, is_break: B = 0): List[B] = List(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen, c0_wen, sel_move, inst_invalid, is_eret, is_syscall, is_break)
+  private def dft(sel_alu1: B = SEL_ALU1_RS, sel_alu2: B = SEL_ALU2_RT, sel_imm: B = SEL_IMM_U, alu_fn: B = FN_X, mul: B = 0, div: B = 0, mem_wen: B = 0, reg_wen: B = 0, sel_reg_waddr: B = SEL_REG_WADDR_RD, sel_reg_wdata: B = SEL_REG_WDATA_EX, br_type: B = BR_TYPE_NO, mem_size: B = MEM_W, load: B = 0, hi_wen: B = 0, lo_wen: B = 0, alu_n: B = 0, c0_wen: B = 0, sel_move: B = SEL_MOVE_NO, inst_invalid: B = 0, is_eret: B = 0, is_syscall: B = 0, is_break: B = 0, check_overflow: B = 0): List[B] = List(sel_alu1, sel_alu2, sel_imm, alu_fn, alu_n, mul, div, mem_wen, reg_wen, sel_reg_waddr, sel_reg_wdata, br_type, mem_size, load, hi_wen, lo_wen, c0_wen, sel_move, inst_invalid, is_eret, is_syscall, is_break, check_overflow)
 
-  private def i(alu_fn: B, lui: Boolean = false): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = if (lui) SEL_IMM_LUI else SEL_IMM_S, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_EX)
+  private def i(alu_fn: B, lui: Boolean = false, check_overflow: B = 0): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = if (lui) SEL_IMM_LUI else SEL_IMM_S, alu_fn = alu_fn, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_EX, check_overflow = check_overflow)
 
   private def l(mem_size: B): List[B] = dft(sel_alu2 = SEL_ALU2_IMM, sel_imm = SEL_IMM_S, alu_fn = FN_ADD, reg_wen = 1, sel_reg_waddr = SEL_REG_WADDR_RT, sel_reg_wdata = SEL_REG_WDATA_MEM, mem_size = mem_size, load = 1)
 

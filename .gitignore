@@ -1,3 +1,8 @@
+# Metals
+metals.sbt
+.bloop/
+.metals/
+.vscode/
 # Temp file for test
 *.S
 *.txt

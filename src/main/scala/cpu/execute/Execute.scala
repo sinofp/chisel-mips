@@ -5,7 +5,7 @@ package cpu.execute
 import chisel3._
 import chisel3.util._
 import cpu.decode.CtrlSigDef._
-import cpu.execute.ALU.{FN_DIV, FN_MULT, SZ_ALU_FN}
+import cpu.execute.ALU._
 import cpu.port.hazard.Execute2Hazard
 import cpu.port.stage._
 import cpu.util.{Config, DefCon}
@@ -29,6 +29,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val except_type = Wire(UInt(32.W))
   val overflow = WireInit(Bool(), false.B)
   val trap = WireInit(Bool(), false.B)
+  val check_overflow = WireInit(Bool(), false.B)
 
   // RegStallOrNext
   Seq(
@@ -54,6 +55,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     memory.c0.waddr -> decode.c0.waddr,
     memory.is_in_delayslot -> Mux(hazard.flush, false.B, decode.is_in_delayslot),
     except_type -> Mux(hazard.flush, 0.U, decode.except_type),
+    check_overflow -> Mux(hazard.flush, false.B, decode.check_overflow),
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
 
   // alu
@@ -138,7 +140,10 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   ))
   memory.c0.wdata := num2 // $rt
   memory.except_type := Cat(except_type(31, 12), overflow, trap, except_type(9, 0))
-  // todo overflow
+  overflow := MuxCase(false.B, Array(
+    (alu_fn === FN_ADD && check_overflow) -> (num1(31) === num2(31) && num2(31) =/= memory.alu_out(31)),
+    (alu_fn === FN_SUB && check_overflow) -> (num1(31) =/= num2(31) && num2(31) === memory.alu_out(31)),
+  ))
 
   // debug
   if (c.dExecute) {
