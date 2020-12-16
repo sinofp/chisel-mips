@@ -82,7 +82,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     import div.io._
     dividend := num1
     divider := num2
-    start := cu_div && !hazard.flush // todo 这取消对么
+    start := cu_div && !busy && !hazard.flush // todo 这取消对么
     sign := alu_fn === FN_DIV
     hazard.div_not_ready := cu_div && !ready
   }
