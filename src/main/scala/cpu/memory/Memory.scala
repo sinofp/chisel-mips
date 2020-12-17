@@ -3,9 +3,9 @@
 package cpu.memory
 
 import chisel3._
-import chisel3.util.{Counter, MuxCase}
+import chisel3.util._
 import cpu.decode.CtrlSigDef._
-import cpu.port.core.Core2DataMem
+import cpu.port.core.SramIO
 import cpu.port.hazard.Memory2Hazard
 import cpu.port.stage.{Execute2Memory, Memory2Decode, Memory2WriteBack}
 import cpu.util.{Config, DefCon}
@@ -17,7 +17,7 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val execute = IO(new Execute2Memory)
   val writeback = IO(new Memory2WriteBack)
   val hazard = IO(Flipped(new Memory2Hazard))
-  val data_mem = IO(new Core2DataMem)
+  val data_sram = IO(new SramIO)
 
   // RegNext
   writeback.pcp8 := RegNext(execute.pcp8)
@@ -34,19 +34,26 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   writeback.c0.wdata := RegNext(execute.c0.wdata)
   writeback.is_in_delayslot := RegNext(execute.is_in_delayslot)
   val except_type = RegNext(Mux(hazard.flush, 0.U, execute.except_type))
+  val mem_wen = RegNext(execute.mem.wen, false.B)
+  val mem_size = RegNext(execute.mem.size, 0.U)
+  val mem_wdata = RegNext(execute.mem.wdata, 0.U)
+  val data_sram_en = RegNext(execute.data_sram_en, false.B)
 
-  // data mem
-  //  val data_mem = Module(new DataMem)
-  //  locally {
-  //    import data_mem.io._
-  //  }
   locally {
-    import data_mem._
-    wen := Mux(writeback.except_type =/= 0.U, false.B, RegNext(execute.mem.wen, 0.U))
-    addr := RegNext(execute.alu_out)
-    wdata := RegNext(execute.mem.wdata)
-    writeback.mem_rdata := rdata
-    size := execute.mem.size
+    import data_sram._
+    en := data_sram_en
+    wen := Mux(writeback.except_type === 0.U, Mux(mem_wen, MuxLookup(mem_size, "b1111".U, Array(
+      MEM_H -> "b0011".U,
+      MEM_B -> "b0001".U,
+    )), 0.U), 0.U)
+    addr := writeback.alu_out
+    wdata := mem_wdata
+    writeback.mem_rdata := MuxLookup(mem_size, rdata, Array(
+      MEM_HU -> Cat(Fill(16, 0.U), rdata(15, 0)),
+      MEM_H -> Cat(Fill(16, rdata(15)), rdata(15, 0)),
+      MEM_BU -> Cat(Fill(24, 0.U), rdata(7, 0)),
+      MEM_B -> Cat(Fill(24, rdata(7)), rdata(7, 0)),
+    ))
   }
 
   // forward reg

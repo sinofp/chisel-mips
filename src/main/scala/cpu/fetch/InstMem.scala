@@ -3,15 +3,15 @@
 package cpu.fetch
 
 import chisel3._
-import cpu.port.core.Core2InstMem
+import cpu.port.core.SramIO
 import cpu.util.{Config, DefCon}
 
 class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
-  val io = IO(Flipped(new Core2InstMem))
+  val io = IO(Flipped(new SramIO))
 
   val mem = VecInit(c.insts ++ Seq.fill(32 - c.insts.length)(0.U(32.W)))
 
-  io.inst := mem(io.pc / 4.U)
+  io.rdata := mem(io.addr / 4.U)
 
   if (c.dInstMem) {
     printf(p"[log InstMem]\n" +

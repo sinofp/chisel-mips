@@ -31,7 +31,8 @@ case class Config(
       "21290001",
       "1528fffe",
       "ac090000"
-    ).map("h" + _).map(_.U)
+    ).map("h" + _).map(_.U),
+    oTeachSoc: Boolean = false
 )
 // @formatter:on
 

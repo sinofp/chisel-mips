@@ -56,6 +56,7 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     memory.is_in_delayslot -> Mux(hazard.flush, false.B, decode.is_in_delayslot),
     except_type -> Mux(hazard.flush, 0.U, decode.except_type),
     check_overflow -> Mux(hazard.flush, false.B, decode.check_overflow),
+    memory.data_sram_en -> Mux(hazard.flush, false.B, decode.data_sram_en)
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
 
   // alu

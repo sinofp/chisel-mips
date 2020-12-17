@@ -7,13 +7,13 @@ import cpu.decode.Decode
 import cpu.execute.Execute
 import cpu.fetch.Fetch
 import cpu.memory.Memory
-import cpu.port.core.{Core2DataMem, Core2InstMem, Core2WriteBack}
+import cpu.port.core.{Core2WriteBack, SramIO}
 import cpu.util.{Config, DefCon}
 import cpu.writeback.WriteBack
 
 class Core(implicit c: Config = DefCon) extends MultiIOModule {
-  val inst_mem = IO(new Core2InstMem)
-  val data_mem = IO(new Core2DataMem)
+  val inst_sram = IO(new SramIO)
+  val data_sram = IO(new SramIO)
   val io = IO(new Bundle() {
     val interrupt = new Core2WriteBack
   })
@@ -44,6 +44,6 @@ class Core(implicit c: Config = DefCon) extends MultiIOModule {
 
   // IO
   io.interrupt <> writeback.core
-  fetch.inst_mem <> inst_mem
-  memory.data_mem <> data_mem
+  fetch.inst_sram <> inst_sram
+  memory.data_sram <> data_sram
 }

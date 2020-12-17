@@ -23,4 +23,5 @@ class Execute2Memory extends Bundle {
   val fwd_hi = new Bundle with WData
   val fwd_lo = new Bundle with WData
   val fwd_c0 = new Bundle with WData
+  val data_sram_en = Input(Bool())
 }

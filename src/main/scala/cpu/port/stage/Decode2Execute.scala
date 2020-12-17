@@ -31,4 +31,5 @@ class Decode2Execute extends Bundle {
   val is_in_delayslot = Output(Bool())
   val wdata = Input(UInt(32.W))
   val check_overflow = Output(Bool())
+  val data_sram_en = Output(Bool())
 }
