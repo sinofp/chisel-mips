@@ -10,7 +10,7 @@ import chisel3.util.experimental.BoringUtils
 import cpu.fetch.InstMem
 import cpu.memory.DataMem
 import cpu.port.core.SramIO
-import cpu.port.debug.TRegWindow
+import cpu.port.debug.{DebugWb, TRegWindow}
 import cpu.util.{Config, DefCon}
 
 import scala.io.Source
@@ -28,6 +28,7 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
   if (c.oTeachSoc) {
     clock.suggestName("clk")
     reset.suggestName("resetn")
+    core.reset := ~reset.asBool
     inst_sram <> core.inst_sram
     data_sram <> core.data_sram
   } else {
@@ -43,6 +44,11 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
     t_regs.get.getElements.foreach(_ := 1.U)
     t_regs.get.getElements.reverse.zipWithIndex.foreach { case (sink, idx) => BoringUtils.addSink(sink, s"reg$idx") }
   }
+  val debug_wb = if(c.oTeachSoc) Some(IO(new DebugWb)) else None
+  if (c.oTeachSoc) {
+    debug_wb.get.getElements.foreach(_ := 1.U)
+    debug_wb.get.getElements.reverse.zipWithIndex.foreach { case (sink, n) => BoringUtils.addSink(sink, s"debugwb$n")}
+  }
 }
 
 object Top extends App {
@@ -52,6 +58,6 @@ object Top extends App {
     val src = Source.fromFile("chisel-mips.srcs/sources_1/new/Top.v")
     val txt = try src.mkString finally src.close
     val writer = new PrintWriter(new File("chisel-mips.srcs/sources_1/new/Top.v"))
-    try writer.write(txt.replaceAll("int_", "int")) finally writer.close()
+    try writer.write(txt.replaceAll("int_", "int").replaceAll("Top", "mycpu_top")) finally writer.close()
   }
 }

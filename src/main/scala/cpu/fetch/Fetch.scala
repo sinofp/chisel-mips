@@ -23,7 +23,7 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
     decode.jump -> decode.j_addr,
     execute.branch -> execute.br_addr
   ))
-  pc_now := RegNext(pc_next, 0.U)
+  pc_now := RegNext(pc_next, if (c.oTeachSoc) "hbfc00000".U else 0.U)
   decode.pcp4 := pc_now + 4.U
 
   inst_sram.en := true.B

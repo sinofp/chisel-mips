@@ -2,9 +2,12 @@
 
 package cpu.writeback
 
+import Chisel.Fill
 import chisel3._
 import chisel3.util.MuxLookup
+import chisel3.util.experimental.BoringUtils
 import cpu.decode.CtrlSigDef._
+import cpu.port.debug.DebugWb
 import cpu.port.hazard.Writeback2Hazard
 import cpu.port.stage.{Decode2WriteBack, Memory2WriteBack, WriteBack2Execute}
 import cpu.util.{Config, DefCon}
@@ -95,5 +98,12 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   memory.fwd_c0.waddr := c0_waddr
   memory.fwd_c0.wdata := c0_wdata
 
-  //  core.junk_output := decode.wdata | hilo.io.lo | memory.alu_out | memory.mem_rdata | c0_wdata
+  val debug_wb = if(c.oTeachSoc) Some(IO(new DebugWb)) else None
+  if (c.oTeachSoc) {
+    debug_wb.get.pc := pc_now
+    debug_wb.get.rf_wdata := decode.wdata
+    debug_wb.get.rf_wnum := decode.waddr
+    debug_wb.get.rf_wen := Fill(4, decode.wen)
+    debug_wb.get.getElements.reverse.zipWithIndex.foreach { case (sink, n) => BoringUtils.addSource(sink, s"debugwb$n")}
+  }
 }
