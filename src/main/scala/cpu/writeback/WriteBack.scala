@@ -5,7 +5,6 @@ package cpu.writeback
 import chisel3._
 import chisel3.util.MuxLookup
 import cpu.decode.CtrlSigDef._
-import cpu.port.core.Core2WriteBack
 import cpu.port.hazard.Writeback2Hazard
 import cpu.port.stage.{Decode2WriteBack, Memory2WriteBack, WriteBack2Execute}
 import cpu.util.{Config, DefCon}
@@ -15,7 +14,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val execute = IO(Flipped(new WriteBack2Execute))
   val memory = IO(Flipped(new Memory2WriteBack))
   val hazard = IO(Flipped(new Writeback2Hazard))
-  val core = IO(new Core2WriteBack)
+  val int = IO(Input(UInt(6.W)))
 
   // RegNext
   val pcp8 = RegNext(memory.pcp8)
@@ -52,6 +51,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     cp0.i.except_type := except_type
     cp0.i.pc_now := pc_now
     cp0.i.is_in_delayslot := is_in_delayslot
+    cp0.i.int := int
     import cp0.i._
     import cp0.o._
     wen := c0_wen
@@ -59,14 +59,14 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
     wdata := c0_wdata
     raddr := execute.c0_raddr
     execute.c0_rdata := rdata
-    int := core.int
     BadVAddr := DontCare
     Count := DontCare
     Compare := DontCare
     memory.c0_status := Status
     memory.c0_cause := Cause
     memory.c0_epc := EPC
-    core.timer_int := timer_int
+    timer_int := DontCare
+    //    core.timer_int := timer_int
   }
 
   // write rf (& forward reg)
@@ -95,5 +95,5 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   memory.fwd_c0.waddr := c0_waddr
   memory.fwd_c0.wdata := c0_wdata
 
-  core.junk_output := decode.wdata | hilo.io.lo | memory.alu_out | memory.mem_rdata | c0_wdata
+  //  core.junk_output := decode.wdata | hilo.io.lo | memory.alu_out | memory.mem_rdata | c0_wdata
 }
