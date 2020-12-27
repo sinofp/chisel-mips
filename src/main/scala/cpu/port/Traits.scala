@@ -23,3 +23,7 @@ trait WAddr extends Bundle {
 trait WData extends Bundle {
   val wdata = Output(UInt(32.W))
 }
+
+trait Sram extends Bundle {
+  val sram_stall = Input(Bool())
+}

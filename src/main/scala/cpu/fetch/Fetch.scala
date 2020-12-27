@@ -31,7 +31,10 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
   inst_sram.wdata := DontCare
   inst_sram.addr := pc_now
   decode.inst := inst_sram.rdata
-  // todo counter wait
+
+  val sram_cnt = Counter(true.B, 2)
+  hazard.sram_stall := sram_cnt._1 === 0.U
+  if (c.dBuiltinMem) hazard.sram_stall := false.B
 
   // debug
   if (c.dFetch) {
