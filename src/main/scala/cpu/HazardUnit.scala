@@ -91,12 +91,16 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // c4 时, fetch 照样刷新, 但 decode 要关掉各种副作用
   val branch = execute.branch
 
-  // flush & stall
+  // stall
   fetch.stall := (load_stall || execute.div_not_ready) && !exception
   decode.stall := (load_stall || execute.div_not_ready) && !exception
+  execute.stall := execute.div_not_ready && !exception
+  memory.stall := DontCare
+  writeback.stall := DontCare
+
+  // flush
   decode.flush := branch || exception
   memory.flush := exception
-  execute.stall := execute.div_not_ready && !exception
   execute.flush := load_stall || exception
   writeback.flush := exception
 

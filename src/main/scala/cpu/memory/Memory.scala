@@ -19,25 +19,34 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   val hazard = IO(Flipped(new Memory2Hazard))
   val data_sram = IO(new SramIO)
 
-  // RegNext
-  writeback.pcp8 := RegNext(execute.pcp8)
-  writeback.rf.wen := RegNext(Mux(hazard.flush, 0.U, execute.rf.wen), 0.U)
-  writeback.sel_reg_wdata := RegNext(execute.sel_reg_wdata)
-  writeback.rf.waddr := RegNext(execute.rf.waddr)
-  writeback.alu_out := RegNext(execute.alu_out)
-  writeback.hi.wen := RegNext(Mux(hazard.flush, 0.U, execute.hi.wen))
-  writeback.hi := RegNext(execute.hi)
-  writeback.lo.wen := RegNext(Mux(hazard.flush, 0.U, execute.lo.wen))
-  writeback.lo := RegNext(execute.lo)
-  writeback.c0.wen := RegNext(Mux(hazard.flush, 0.U, execute.c0.wen))
-  writeback.c0.waddr := RegNext(execute.c0.waddr)
-  writeback.c0.wdata := RegNext(execute.c0.wdata)
-  writeback.is_in_delayslot := RegNext(execute.is_in_delayslot)
-  val except_type = RegNext(Mux(hazard.flush, 0.U, execute.except_type))
-  val mem_wen = RegNext(execute.mem.wen, false.B)
-  val mem_size = RegNext(execute.mem.size, 0.U)
-  val mem_wdata = RegNext(execute.mem.wdata, 0.U)
-  val data_sram_en = RegNext(execute.data_sram_en, false.B)
+  val except_type = Wire(UInt(32.W))
+  val mem_wen = Wire(Bool())
+  val mem_size = Wire(UInt(SZ_MEM_TYPE))
+  val mem_wdata = Wire(UInt(32.W))
+  val data_sram_en = Wire(Bool())
+
+  // RegStallOrNext
+  Seq(
+    writeback.pcp8 -> execute.pcp8,
+    writeback.rf.wen -> Mux(hazard.flush, false.B, execute.rf.wen),
+    writeback.sel_reg_wdata -> execute.sel_reg_wdata,
+    writeback.rf.waddr -> execute.rf.waddr,
+    writeback.alu_out -> execute.alu_out,
+    writeback.hi.wen -> Mux(hazard.flush, false.B, execute.hi.wen),
+    writeback.hi -> execute.hi,
+    writeback.lo.wen -> Mux(hazard.flush, false.B, execute.lo.wen),
+    writeback.lo -> execute.lo,
+    writeback.c0.wen -> Mux(hazard.flush, false.B, execute.c0.wen),
+    writeback.c0.waddr -> execute.c0.waddr,
+    writeback.c0.wdata -> execute.c0.wdata,
+    writeback.is_in_delayslot -> execute.is_in_delayslot,
+    except_type -> Mux(hazard.flush, 0.U, execute.except_type),
+    mem_wen -> execute.mem.wen,
+    mem_size -> execute.mem.size,
+    mem_wdata -> execute.mem.wdata,
+    data_sram_en -> execute.data_sram_en,
+  ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next.asTypeOf(reg)), 0.U.asTypeOf(reg)) }
+  // todo asTypeOf 是为了 {writeback,execute}{hi,lo} 准备的，因为它们都是 new Bundle with XXX，我要不要改成单个类？
 
   locally {
     import data_sram._
