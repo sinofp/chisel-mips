@@ -91,22 +91,12 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // c4 时, fetch 照样刷新, 但 decode 要关掉各种副作用
   val branch = execute.branch
 
-  // sram stall
-  // 其实只要每两个周期发出一次sram stall就行，因为fetch每（两个）周期都有
-  // 等于说inst sram stall每两个周期都有，而这会盖过data sram stall
-  // data stall                         ↓
-  // inst stall       ↓     ↓     ↓     ↓
-  // load1         : f1 f1 d1 d1 e1 e1 m1 m1
-  // inst1         :       f2 f2 d2 d2
-  // inst2         :             f3 f3
-  // todo load stall?
-  val sram_stall = fetch.sram_stall // || memory.sram_stall
   // stall
-  fetch.stall := sram_stall || (load_stall || execute.div_not_ready) && !exception
-  decode.stall := sram_stall || (load_stall || execute.div_not_ready) && !exception
-  execute.stall := sram_stall || execute.div_not_ready && !exception
-  memory.stall := sram_stall
-  writeback.stall := sram_stall
+  fetch.stall := (load_stall || execute.div_not_ready) && !exception
+  decode.stall := (load_stall || execute.div_not_ready) && !exception
+  execute.stall := execute.div_not_ready && !exception
+  memory.stall := DontCare
+  writeback.stall := DontCare
 
   // flush
   decode.flush := branch || exception

@@ -63,8 +63,6 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
       MEM_BU -> Cat(Fill(24, 0.U), rdata(7, 0)),
       MEM_B -> Cat(Fill(24, rdata(7)), rdata(7, 0)),
     ))
-    //    hazard.sram_stall := en && !wen.orR // 读
-    //    if (c.dBuiltinMem) hazard.sram_stall := false.B
   }
 
   // forward reg
