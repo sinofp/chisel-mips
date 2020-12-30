@@ -23,13 +23,19 @@ class Fetch(implicit c: Config = DefCon) extends MultiIOModule {
     decode.jump -> decode.j_addr,
     execute.branch -> execute.br_addr
   ))
-  pc_now := RegNext(pc_next, if (c.oTeachSoc) "hbfc00000".U else 0.U)
+  pc_now := RegNext(pc_next, if (c.oLoongSoc || c.dTeachSoc) "hbfc00000".U else 0.U)
   decode.pcp4 := pc_now + 4.U
 
   inst_sram.en := true.B
   inst_sram.wen := 0.U
   inst_sram.wdata := DontCare
-  inst_sram.addr := pc_now
+  inst_sram.addr := {
+    if (c.dTeachSoc) {
+      "b000".U ## pc_now(29,0)
+    } else {
+      pc_now
+    }
+  }
   decode.inst := inst_sram.rdata
   // todo counter wait
 

@@ -114,8 +114,8 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   memory.fwd_c0.waddr := c0_waddr
   memory.fwd_c0.wdata := c0_wdata
 
-  val debug_wb = if(c.oTeachSoc) Some(IO(new DebugWb)) else None
-  if (c.oTeachSoc) {
+  val debug_wb = if(c.oLoongSoc) Some(IO(new DebugWb)) else None
+  if (c.oLoongSoc) {
     debug_wb.get.pc := pc_now
     debug_wb.get.rf_wdata := decode.wdata
     debug_wb.get.rf_wnum := decode.waddr

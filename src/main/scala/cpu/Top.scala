@@ -17,15 +17,15 @@ import scala.io.Source
 
 class Top(implicit c: Config = DefCon) extends MultiIOModule {
   val int = IO(Input(UInt(6.W)))
-  val inst_sram = IO(if (c.oTeachSoc) new SramIO else Output(UInt(0.W)))
-  val data_sram = IO(if (c.oTeachSoc) new SramIO else Output(UInt(0.W)))
+  val inst_sram = IO(if (c.oLoongSoc) new SramIO else Output(UInt(0.W)))
+  val data_sram = IO(if (c.oLoongSoc) new SramIO else Output(UInt(0.W)))
 
   val core = Module(new Core)
 
   int <> core.int
   inst_sram := DontCare
   data_sram := DontCare
-  if (c.oTeachSoc) {
+  if (c.oLoongSoc) {
     clock.suggestName("clk")
     reset.suggestName("resetn")
     core.reset := ~reset.asBool
@@ -44,17 +44,17 @@ class Top(implicit c: Config = DefCon) extends MultiIOModule {
     t_regs.get.getElements.foreach(_ := 1.U)
     t_regs.get.getElements.reverse.zipWithIndex.foreach { case (sink, idx) => BoringUtils.addSink(sink, s"reg$idx") }
   }
-  val debug_wb = if(c.oTeachSoc) Some(IO(new DebugWb)) else None
-  if (c.oTeachSoc) {
+  val debug_wb = if(c.oLoongSoc || c.dTeachSoc) Some(IO(new DebugWb)) else None
+  if (c.oLoongSoc || c.dTeachSoc) {
     debug_wb.get.getElements.foreach(_ := 1.U)
     debug_wb.get.getElements.reverse.zipWithIndex.foreach { case (sink, n) => BoringUtils.addSink(sink, s"debugwb$n")}
   }
 }
 
 object Top extends App {
-  implicit val c: Config = Config(oTeachSoc = true)
+  implicit val c: Config = Config(oLoongSoc = true)
   new ChiselStage execute(Array("--target-dir", "chisel-mips.srcs/sources_1/new"), Seq(ChiselGeneratorAnnotation(() => new Top)))
-  if (c.oTeachSoc) {
+  if (c.oLoongSoc) {
     val src = Source.fromFile("chisel-mips.srcs/sources_1/new/Top.v")
     val txt = try src.mkString finally src.close
     val writer = new PrintWriter(new File("chisel-mips.srcs/sources_1/new/Top.v"))

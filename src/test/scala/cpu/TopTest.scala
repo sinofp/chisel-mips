@@ -6,6 +6,8 @@ import chisel3._
 import chiseltest._
 import cpu.util.Config
 import org.scalatest._
+import chiseltest.experimental.TestOptionBuilder._
+import chiseltest.internal.VerilatorBackendAnnotation
 
 import java.io.{File, PrintWriter}
 import scala.io.Source
@@ -136,6 +138,31 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.t_regs.get.t2.expect(200.U)
       c.clock.step(8)
       c.t_regs.get.t3.expect(300.U)
+    }
+  }
+
+  it should "pass bitmips_experiments lab5" in {
+    println("Test start:")
+    val instMemSize = 131072
+    val coe = Source.fromFile("inst_ram.coe")
+    val insts = try coe.getLines.drop(2).take(instMemSize).toArray.map("h" + _).map(_.U) finally coe.close
+    val trace = Source.fromFile("golden_trace.txt")
+    val ref = try trace.getLines.drop(1) finally trace.close
+    implicit val c: Config = Config(insts = insts, instMemSize = instMemSize, dTeachSoc = true)
+    test(new Top)//.withAnnotations(Seq(VerilatorBackendAnnotation))
+    { c =>
+      println("Test begin:")
+      while (c.debug_wb.get.pc.peek.litValue != 0xbfc00004) {
+        println(s"I'm not dead... pc @ ${c.debug_wb.get.pc.peek.litValue}")
+        c.clock.step(1)
+      }
+      while (c.debug_wb.get.pc.peek.litValue != 0xbfc00100) {
+        c.clock.step(1)
+        val _ :: pc:: wnum:: wdata :: _ = ref.next.split(' ').toList.map("h" + _).map(_.U)
+        c.debug_wb.get.pc.expect(pc)
+        c.debug_wb.get.rf_wnum.expect(wnum)
+        c.debug_wb.get.rf_wdata.expect(wdata)
+      }
     }
   }
 }

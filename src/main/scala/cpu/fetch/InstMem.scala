@@ -9,7 +9,7 @@ import cpu.util.{Config, DefCon}
 class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
   val io = IO(Flipped(new SramIO))
 
-  val mem = VecInit(c.insts ++ Seq.fill(32 - c.insts.length)(0.U(32.W)))
+  val mem = VecInit(c.insts ++ Seq.fill(c.instMemSize - c.insts.length)(0.U(32.W)))
 
   io.rdata := RegNext(mem(io.addr / 4.U)) // 模仿SRAM下周期得到读数据
 
