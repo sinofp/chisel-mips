@@ -19,23 +19,3 @@ jobs:
         run: wget http://courses.missouristate.edu/kenvollmar/mars/MARS_4_5_Aug2014/Mars4_5.jar
       - name: Run tests
         run: sbt test
-  cloc:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install cloc
-        run: sudo apt install cloc
-      - id: get-comment-body
-        run: |
-          printf 'Output from cloc:\n\n<pre>' > comment-body.txt
-          cloc HEAD | tee -a comment-body.txt
-          echo '</pre>' >> comment-body.txt
-          body=$(cat comment-body.txt)
-          body="${body//'%'/'%25'}"
-          body="${body//$'\n'/'%0A'}"
-          body="${body//$'\r'/'%0D'}"
-          echo ::set-output name=body::$body
-      - name: Create commit comment
-        uses: peter-evans/commit-comment@v1
-        with:
-          body: ${{ steps.get-comment-body.outputs.body }}
