@@ -17,7 +17,8 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   val hazard = IO(Flipped(new Decode2Hazard(2)))
 
   val inst = Wire(UInt(32.W))
-  inst := RegNext(MuxCase(fetch.inst, Array(hazard.stall -> inst, hazard.flush -> 0.U)), 0.U)
+  //  inst := RegNext(MuxCase(fetch.inst, Array(hazard.stall -> inst, hazard.flush -> 0.U)), 0.U)
+  inst := fetch.inst // todo stall被fetch处理了（pc stall=inst stall），但貌似flush的处理方式，decode和fetch不一样啊
   val pcp4 = Wire(UInt(32.W))
   pcp4 := RegNext(Mux(hazard.stall, pcp4, fetch.pcp4), 0.U)
 

@@ -11,7 +11,7 @@ class InstMem(implicit c: Config = DefCon) extends MultiIOModule {
 
   val mem = VecInit(c.insts ++ Seq.fill(32 - c.insts.length)(0.U(32.W)))
 
-  io.rdata := mem(io.addr / 4.U)
+  io.rdata := RegNext(mem(io.addr / 4.U)) // 模仿SRAM下周期得到读数据
 
   if (c.dInstMem) {
     printf(p"[log InstMem]\n" +

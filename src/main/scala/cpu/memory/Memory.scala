@@ -44,18 +44,19 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
     mem_wen -> execute.mem.wen,
     mem_size -> execute.mem.size,
     mem_wdata -> execute.mem.wdata,
-    data_sram_en -> execute.data_sram_en,
+    data_sram_en -> execute.data_sram_en, // todo 目前是只要不写，就一直在读，这个变量是不是可以删掉？
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next.asTypeOf(reg)), 0.U.asTypeOf(reg)) }
   // todo asTypeOf 是为了 {writeback,execute}{hi,lo} 准备的，因为它们都是 new Bundle with XXX，我要不要改成单个类？
 
   locally {
     import data_sram._
-    en := data_sram_en
+    en := true.B
     wen := Mux(writeback.except_type === 0.U, Mux(mem_wen, MuxLookup(mem_size, "b1111".U, Array(
       MEM_H -> "b0011".U,
       MEM_B -> "b0001".U,
     )), 0.U), 0.U)
-    addr := writeback.alu_out
+    // 要写的话，用本阶段地址；要读的话，用上阶段地址，保证读这周期（=上阶段的下周期）给出正确值
+    addr := Mux(mem_wen, writeback.alu_out, execute.alu_out)
     wdata := mem_wdata
     writeback.mem_rdata := MuxLookup(mem_size, rdata, Array(
       MEM_HU -> Cat(Fill(16, 0.U), rdata(15, 0)),

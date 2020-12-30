@@ -2,13 +2,12 @@
 
 package cpu
 
-import java.io.{File, PrintWriter}
-
 import chisel3._
 import chiseltest._
 import cpu.util.Config
 import org.scalatest._
 
+import java.io.{File, PrintWriter}
 import scala.io.Source
 import scala.sys.process._
 
@@ -107,24 +106,6 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.t_regs.get.t3.expect(3.U)
     }
   }
-
-//  it should "move to/from CP0" in {
-//    val insts = Array(
-//      "2009003c", // addi $t1, $0, 60
-//      "40895800", // mtc0 $t1, $11
-//      "400a5800", // mfc0 $t2, $11
-//      "014a5820", // add $t3, $t2, $t2
-//    ).map("h" + _).map(_.U)
-//    implicit val c: Config = Config(insts = insts, dTReg = true, dBuiltinMem = true, dCP0 = true)
-//    test(new Top) { c =>
-//      c.clock.step(7)
-//      c.t_regs.get.t2.expect(60.U)
-//      c.clock.step(1)
-//      c.t_regs.get.t3.expect(120.U)
-//      c.clock.step(53) // count 到60的下一周期，timer_int的1被写入
-//      c.io.interrupt.timer_int.expect(true.B)
-//    }
-//  }
 
   it should "handle syscall and eret" in {
     val writer = new PrintWriter(new File("mips.S"))
