@@ -19,40 +19,24 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val hazard = IO(Flipped(new Writeback2Hazard))
   val int = IO(Input(UInt(6.W)))
 
-  val pcp8 = Wire(UInt(32.W))
+  // RegNext
+  val pcp8 = RegNext(memory.pcp8)
   val pc_now = pcp8 - 8.U
-  val sel_reg_wdata = Wire(UInt(32.W))
-  val mem_rdata = Wire(UInt(32.W))
-  val alu_out = Wire(UInt(32.W))
-  val hi_wen = Wire(Bool())
-  val hi = Wire(chiselTypeOf(memory.hi))
-  val lo_wen = Wire(Bool())
-  val lo = Wire(chiselTypeOf(memory.lo))
+  val sel_reg_wdata = RegNext(memory.sel_reg_wdata)
+  val mem_rdata = RegNext(memory.mem_rdata)
+  val alu_out = RegNext(memory.alu_out)
+  val hi_wen = RegNext(Mux(hazard.flush, 0.U, memory.hi.wen))
+  val hi = RegNext(memory.hi)
+  val lo_wen = RegNext(Mux(hazard.flush, 0.U, memory.lo.wen))
+  val lo = RegNext(memory.lo)
   // 在writeback flush的信号，是memory中的，也就是触发异常的指令。它可能也要写CP0
   // 但发生异常时，对CP0的修改应当是通过except_type给出的，所以这个wen也要被flush掉
-  val c0_wen = Wire(Bool())
-  val c0_waddr = Wire(UInt(32.W))
-  val c0_wdata = Wire(UInt(32.W))
+  val c0_wen = RegNext(Mux(hazard.flush, 0.U, memory.c0.wen))
+  val c0_waddr = RegNext(memory.c0.waddr)
+  val c0_wdata = RegNext(memory.c0.wdata)
   // 这些也要RegNext么？
-  val except_type = Wire(UInt(32.W))
-  val is_in_delayslot = Wire(Bool())
-
-  // RegStallOrNext
-  Seq(
-    pcp8 -> memory.pcp8,
-    sel_reg_wdata -> memory.sel_reg_wdata,
-    mem_rdata -> memory.mem_rdata,
-    alu_out -> memory.alu_out,
-    hi_wen -> Mux(hazard.flush, 0.U, memory.hi.wen),
-    hi -> memory.hi,
-    lo_wen -> Mux(hazard.flush, 0.U, memory.lo.wen),
-    lo -> memory.lo,
-    c0_wen -> Mux(hazard.flush, 0.U, memory.c0.wen),
-    c0_waddr -> memory.c0.waddr,
-    c0_wdata -> memory.c0.wdata,
-    except_type -> memory.except_type,
-    is_in_delayslot -> memory.is_in_delayslot,
-  ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U.asTypeOf(reg)) }
+  val except_type = RegNext(memory.except_type)
+  val is_in_delayslot = RegNext(memory.is_in_delayslot)
 
   // hilo
   val hilo = Module(new HILO)
