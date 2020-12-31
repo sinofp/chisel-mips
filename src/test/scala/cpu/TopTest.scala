@@ -2,12 +2,13 @@
 
 package cpu
 
+import java.io.{File, PrintWriter}
+
 import chisel3._
 import chiseltest._
 import cpu.util.Config
 import org.scalatest._
 
-import java.io.{File, PrintWriter}
 import scala.io.Source
 import scala.sys.process._
 
@@ -138,4 +139,31 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.t_regs.get.t3.expect(300.U)
     }
   }
+
+  it should "fragment 1" in {
+    val writer = new PrintWriter(new File("mips.S"))
+    try writer.write(
+      """lui $9, 0xbfc0
+        |addiu $9, $9, 0x704
+        |lui $10, 0x2000
+        |subu $25, $9, $10
+        |""".stripMargin)
+    finally writer.close()
+    "java -jar Mars4_5.jar mc CompactTextAtZero a dump .text HexText inst.txt mips.S" !
+    val source = Source.fromFile("inst.txt")
+    val insts = try source.getLines.toArray.map("h" + _).map(_.U) finally source.close
+    implicit val c: Config = Config(insts = insts, dTReg = true, dBuiltinMem = true,
+      dForward = true, dRegFile = true, dExecute = true)
+    test(new Top) { c =>
+      c.clock.step(5) // lui
+      c.t_regs.get.t1.expect("hbfc00000".U)
+      c.clock.step(1) // addiu
+      c.t_regs.get.t1.expect("hbfc00704".U)
+      c.clock.step(1) // lui
+      c.t_regs.get.t2.expect("h20000000".U)
+      c.clock.step(1) // subu
+      c.t_regs.get.t9.expect("h9fc00704".U)
+    }
+  }
+
 }

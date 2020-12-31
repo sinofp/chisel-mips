@@ -147,8 +147,10 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   ))
 
   // debug
-  if (c.dExecute) {
-    printf(p"[log execute]\n\tin1 = ${Hexadecimal(decode.num1)}, in2 = ${Hexadecimal(decode.num2)}, adder_out = ${Hexadecimal(adder_out)}\n")
+  if (c.dExecute || c.dALU) {
+    printf(p"[log execute]\n\tin1 = ${Hexadecimal(decode.num1)}, in2 = ${Hexadecimal(decode.num2)}," +
+      p" adder_out = ${Hexadecimal(adder_out)}, mem.alu_out = ${Hexadecimal(memory.alu_out)}\n " +
+      p"\talu_n = ${Binary(alu_n)}, sel_move = ${Binary(sel_move)}, alu.out = ${Hexadecimal(alu.io.out)}\n")
   }
   if (c.dBrUnit) {
     printf(p"[log execute]\n\tbranch = ${fetch.branch}, br_addr >> 2 = ${fetch.br_addr / 4.U}\n")
