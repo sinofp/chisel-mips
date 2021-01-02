@@ -19,7 +19,10 @@ scalacOptions ++= Seq(
   "-language:reflectiveCalls",
   "-deprecation",
   "-feature",
-  "-Xcheckinit"
+  "-Xcheckinit",
+  // Features I like
+  "-language:implicitConversions",
+  "-language:postfixOps",
 )
 
 mainClass in (Compile, run) := Some("cpu.Top")
