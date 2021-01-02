@@ -3,6 +3,7 @@
 package cpu.util
 
 import chisel3._
+import chisel3.internal.sourceinfo.SourceInfo
 import chisel3.util._
 
 import scala.math._
@@ -29,6 +30,14 @@ object Chisel3IsBad {
           Cat(lhs.asUInt()(w - 1, high + 1), rhs.asUInt, lhs.asUInt()(low - 1, 0))
         }
       }
+    }
+  }
+
+  implicit class PartialBulkConnect(lhs: Bundle) {
+    def ?=(rhs: Bundle)(implicit sourceInfo: SourceInfo, connectionCompileOptions: CompileOptions): Unit = {
+      val lPorts = lhs.elements
+      val rPorts = rhs.elements
+      (lPorts.keySet & rPorts.keySet).foreach(name => lPorts(name) := rPorts(name))
     }
   }
 

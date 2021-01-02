@@ -73,9 +73,9 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
 
   //        ↓ load stall
   // c1 c2 c3 c4 c5 c6 c7 (cycle)
-  // f1 d1 e1 m1 w1
-  //    f2 d2 xx xx xx
-  //       f2 d2 e2 m2 w2
+  // f1 d1 e1 m1 w1 (load)
+  //    f2 d2 d2 e2 m2 w2
+  //       f3 f3 d3 e3 m3 w3
   // c3 时发生 load stall, c4 时 fetch 应该还是 f2, decode 应该还是 d2, execute 以及其后应该被冲刷
   // 所以 c3 时 fetch, decode, execute 应该分别保留 pc_now, 保留 inst, 下周期输出 mem/reg_wen 为 0, br_type 为 no
   val load_stall = decode.forward.exists((_: UInt) === FORWARD_EXE) && decode.prev_load

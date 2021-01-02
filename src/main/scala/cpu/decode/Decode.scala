@@ -7,6 +7,7 @@ import chisel3.util._
 import cpu.decode.CtrlSigDef._
 import cpu.port.hazard.Decode2Hazard
 import cpu.port.stage.{Decode2Execute, Decode2Fetch, Decode2WriteBack, Memory2Decode}
+import cpu.util.Chisel3IsBad.PartialBulkConnect
 import cpu.util.{Config, DefCon}
 
 class Decode(implicit c: Config = DefCon) extends MultiIOModule {
@@ -27,22 +28,14 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   cu.inst := inst
   locally {
     import cu.ctrl._
-    execute.alu_fn := alu_fn
-    execute.alu_n := alu_n
-    execute.mul := mul
-    execute.div := div
     execute.mem.wen := mem_wen
     execute.rf.wen := reg_wen
-    execute.sel_reg_wdata := sel_reg_wdata
-    execute.br_type := br_type
     execute.mem.size := mem_size
     execute.hi.wen := hi_wen
     execute.lo.wen := lo_wen
     execute.c0.wen := c0_wen
-    execute.sel_move := sel_move
-    execute.check_overflow := check_overflow
-    execute.data_sram_en := data_sram_en
   }
+  execute ?= cu.ctrl
   val sel_alu1 = cu.ctrl.sel_alu1
   val sel_alu2 = cu.ctrl.sel_alu2
   val sel_imm = cu.ctrl.sel_imm
