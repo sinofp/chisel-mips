@@ -40,12 +40,12 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   it should "handle load stall" in {
     implicit val c: Config = Config(insts = marsDump(
-      """addi $t1, $0, 0x1234 # cycle 5 (0开始数) $t1 更新
-        |sw $t1, 0($0)        # cycle 7 0($0) 更新
-        |addi $t2, $0, 0x1234 # cycle 7
-        |addi $t1, $0, 0      # cycle 8
-        |lw $t1, 0($0)        # cycle 9 $t1 更新 ∴ cycle 8 是这条的 writeback
-        |beq $t1, $t2, label  # ∵ ↑  ∴ cycle 7 是这条的原定 execute, c8 是这条的被 load stall 推迟的 execute
+      """addi $t1, $0, 0x1234
+        |sw $t1, 0($0)
+        |addi $t2, $0, 0x1234
+        |addi $t1, $0, 0
+        |lw $t1, 0($0)
+        |beq $t1, $t2, label
         |nop
         |addi $t1, $0, 0x4567
         |label:
@@ -54,7 +54,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
         |_loop:
         |beq $0, $0, _loop
         |nop
-        |""".stripMargin), dBuiltinMem = true, dFetch = true, dTReg = true, dBrUnit = true, dForward = true, dDecode = true)
+        |""".stripMargin), dBuiltinMem = true, dTReg = true, dDecode = true)
     test(new Top) { c =>
       def t1 = c.t_regs.get.t1.peek.litValue
 
