@@ -20,17 +20,25 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
     finally writer.close()
     "java -jar Mars4_5.jar mc CompactTextAtZero a dump .text HexText inst.txt mips.S" !
     val source = Source.fromFile("inst.txt")
-    try source.getLines.toArray.map("h" + _).map(_.U) finally source.close
+    try source.getLines.toArray.map("h" + _).map(_.U)
+    finally source.close
   }
 
   it should "work" in {
-    implicit val c: Config = Config(insts = Array(
-      "20080064", // addi $t0, $0, 100
-      "20090000", // addi $t1, $0, 0
-      "21290001", // loop: addi $t1, $t1, 1
-      "01285022", // sub $t2, $t1, $t0
-      "0540fffd", // bltz $t2, loop，后面全是初始化的NOP，延迟槽不用担心
-    ).map("h" + _).map(_.U), dRegFile = true, dBuiltinMem = true, dBrUnit = true, dExecute = true, dTReg = true)
+    implicit val c: Config = Config(
+      insts = Array(
+        "20080064", // addi $t0, $0, 100
+        "20090000", // addi $t1, $0, 0
+        "21290001", // loop: addi $t1, $t1, 1
+        "01285022", // sub $t2, $t1, $t0
+        "0540fffd", // bltz $t2, loop，后面全是初始化的NOP，延迟槽不用担心
+      ).map("h" + _).map(_.U),
+      dRegFile = true,
+      dBuiltinMem = true,
+      dBrUnit = true,
+      dExecute = true,
+      dTReg = true,
+    )
     test(new Top) { c =>
       c.clock.step(99)
       c.t_regs.get.t0.expect(100.U)
@@ -39,22 +47,26 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "handle load stall" in {
-    implicit val c: Config = Config(insts = marsDump(
-      """addi $t1, $0, 0x1234
-        |sw $t1, 0($0)
-        |addi $t2, $0, 0x1234
-        |addi $t1, $0, 0
-        |lw $t1, 0($0)
-        |beq $t1, $t2, label
-        |nop
-        |addi $t1, $0, 0x4567
-        |label:
-        |addi $t1, $0, 0x7654
-        |nop
-        |_loop:
-        |beq $0, $0, _loop
-        |nop
-        |""".stripMargin), dBuiltinMem = true, dTReg = true, dDecode = true)
+    implicit val c: Config = Config(
+      insts = marsDump("""addi $t1, $0, 0x1234
+                         |sw $t1, 0($0)
+                         |addi $t2, $0, 0x1234
+                         |addi $t1, $0, 0
+                         |lw $t1, 0($0)
+                         |beq $t1, $t2, label
+                         |nop
+                         |addi $t1, $0, 0x4567
+                         |label:
+                         |addi $t1, $0, 0x7654
+                         |nop
+                         |_loop:
+                         |beq $0, $0, _loop
+                         |nop
+                         |""".stripMargin),
+      dBuiltinMem = true,
+      dTReg = true,
+      dDecode = true,
+    )
     test(new Top) { c =>
       def t1 = c.t_regs.get.t1.peek.litValue
 
@@ -66,18 +78,25 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "handle hilo" in {
-    implicit val c: Config = Config(insts = Array(
-      "20091234", // addi $t1, $0, 0x1234
-      "01200011", // mthi $t1 -- cycle 6
-      "00005010", // mfhi $t2 -- cycle 7
-      // "00000000", // 测试从m前推到d
-      "01494820", // add $t1, $t2, $t1 -- execute 在 cycle 5
-      "00000011", // mthi $0
-      "01200011", // mthi $t1
-      "01400011", // mthi $t2
-      "00006010", // mfhi $t4
-    ).map("h" + _).map(_.U), dRegFile = true, dTReg = true,
-      dHILO = true, dExecute = true, dForward = true, dBuiltinMem = true)
+    implicit val c: Config = Config(
+      insts = Array(
+        "20091234", // addi $t1, $0, 0x1234
+        "01200011", // mthi $t1 -- cycle 6
+        "00005010", // mfhi $t2 -- cycle 7
+        // "00000000", // 测试从m前推到d
+        "01494820", // add $t1, $t2, $t1 -- execute 在 cycle 5
+        "00000011", // mthi $0
+        "01200011", // mthi $t1
+        "01400011", // mthi $t2
+        "00006010", // mfhi $t4
+      ).map("h" + _).map(_.U),
+      dRegFile = true,
+      dTReg = true,
+      dHILO = true,
+      dExecute = true,
+      dForward = true,
+      dBuiltinMem = true,
+    )
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t2.expect("h1234".U)
@@ -90,12 +109,17 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "jump" in {
-    implicit val c: Config = Config(insts = Array(
-      "08100003", // j aaa
-      "20090001", // addi $t1, $0, 1
-      "200a0002", // addi $t2, $0, 2 -- 跳过
-      "200b0003", // aaa: addi $t3, $0, 3
-    ).map("h" + _).map(_.U), dRegFile = true, dBuiltinMem = true, dTReg = true)
+    implicit val c: Config = Config(
+      insts = Array(
+        "08100003", // j aaa
+        "20090001", // addi $t1, $0, 1
+        "200a0002", // addi $t2, $0, 2 -- 跳过
+        "200b0003", // aaa: addi $t3, $0, 3
+      ).map("h" + _).map(_.U),
+      dRegFile = true,
+      dBuiltinMem = true,
+      dTReg = true,
+    )
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t2.expect(0.U)
@@ -104,21 +128,26 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "handle syscall and eret" in {
-    implicit val c: Config = Config(insts = marsDump(
-      """j _start
-        |nop
-        |addi $t2, $0, 200
-        |mfc0 $t9, $14
-        |addi $t9, $t9, 4
-        |mtc0 $t9, $14
-        |eret
-        |
-        |_start:
-        |addi $t1, $0, 100
-        |syscall
-        |add $t3, $t2, $t1
-        |""".stripMargin), dTReg = true, dBuiltinMem = true,
-      dExcept = true, dExceptEntry = Some((2 * 4).U), dFetch = true)
+    implicit val c: Config = Config(
+      insts = marsDump("""j _start
+                         |nop
+                         |addi $t2, $0, 200
+                         |mfc0 $t9, $14
+                         |addi $t9, $t9, 4
+                         |mtc0 $t9, $14
+                         |eret
+                         |
+                         |_start:
+                         |addi $t1, $0, 100
+                         |syscall
+                         |add $t3, $t2, $t1
+                         |""".stripMargin),
+      dTReg = true,
+      dBuiltinMem = true,
+      dExcept = true,
+      dExceptEntry = Some((2 * 4).U),
+      dFetch = true,
+    )
     test(new Top) { c =>
       c.clock.step(7)
       c.t_regs.get.t1.expect(100.U)
@@ -130,13 +159,18 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "fragment 1" in {
-    implicit val c: Config = Config(insts = marsDump(
-      """lui $9, 0xbfc0
-        |addiu $9, $9, 0x704
-        |lui $10, 0x2000
-        |subu $25, $9, $10
-        |""".stripMargin), dTReg = true, dBuiltinMem = true,
-      dForward = true, dRegFile = true, dExecute = true)
+    implicit val c: Config = Config(
+      insts = marsDump("""lui $9, 0xbfc0
+                         |addiu $9, $9, 0x704
+                         |lui $10, 0x2000
+                         |subu $25, $9, $10
+                         |""".stripMargin),
+      dTReg = true,
+      dBuiltinMem = true,
+      dForward = true,
+      dRegFile = true,
+      dExecute = true,
+    )
     test(new Top) { c =>
       c.clock.step(5) // lui
       c.t_regs.get.t1.expect("hbfc00000".U)
@@ -150,19 +184,23 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
   }
 
   it should "fragment 2 (only load stall)" in {
-    implicit val c: Config = Config(insts = marsDump(
-      """addi $t3, $0, 123
-        |sw $t3, 0($0)
-        |lw $t1, 0($0)
-        |add $t2, $0, $t1
-        |""".stripMargin), dTReg = true, dBuiltinMem = true,
-      dForward = true, dRegFile = true, dExecute = true)
+    implicit val c: Config = Config(
+      insts = marsDump("""addi $t3, $0, 123
+                         |sw $t3, 0($0)
+                         |lw $t1, 0($0)
+                         |add $t2, $0, $t1
+                         |""".stripMargin),
+      dTReg = true,
+      dBuiltinMem = true,
+      dForward = true,
+      dRegFile = true,
+      dExecute = true,
+    )
     test(new Top) { c =>
       def t2 = c.t_regs.get.t1.peek.litValue
 
-      while (t2 != 123) {
+      while (t2 != 123)
         c.clock.step(1)
-      }
     }
   }
 }

@@ -44,39 +44,42 @@ import cpu.execute.ALU._
 
 class ALU(implicit c: Config = DefCon) extends Module {
   val xLen = 32
-  val io = new Bundle {
-    val fn = Bits(INPUT, SZ_ALU_FN)
-    val in2 = UInt(INPUT, xLen)
-    val in1 = UInt(INPUT, xLen)
-    val out = UInt(OUTPUT, xLen)
+  val io   = new Bundle {
+    val fn        = Bits(INPUT, SZ_ALU_FN)
+    val in2       = UInt(INPUT, xLen)
+    val in1       = UInt(INPUT, xLen)
+    val out       = UInt(OUTPUT, xLen)
     val adder_out = UInt(OUTPUT, xLen)
-    val cmp_out = Bool(OUTPUT)
+    val cmp_out   = Bool(OUTPUT)
   }
 
   // ADD, SUB
-  val in2_inv = Mux(isSub(io.fn), ~io.in2, io.in2).asInstanceOf[UInt] // 其实不用转，只为了告诉Idea
+  val in2_inv     = Mux(isSub(io.fn), ~io.in2, io.in2).asInstanceOf[UInt] // 其实不用转，只为了告诉Idea
   val in1_xor_in2 = io.in1 ^ in2_inv
   io.adder_out := io.in1 + in2_inv + isSub(io.fn)
 
   // SLT, SLTU
   val slt =
-    Mux(io.in1(xLen - 1) === io.in2(xLen - 1), io.adder_out(xLen - 1),
-      Mux(cmpUnsigned(io.fn), io.in2(xLen - 1), io.in1(xLen - 1)))
+    Mux(
+      io.in1(xLen - 1) === io.in2(xLen - 1),
+      io.adder_out(xLen - 1),
+      Mux(cmpUnsigned(io.fn), io.in2(xLen - 1), io.in1(xLen - 1)),
+    )
   io.cmp_out := cmpInverted(io.fn) ^ Mux(cmpEq(io.fn), in1_xor_in2 === UInt(0), slt)
 
   // SLL, SRL, SRA
   val (shamt, shin_r) = (io.in2(4, 0), io.in1)
-  val shin = Mux(io.fn === FN_SR || io.fn === FN_SRA, shin_r, Reverse(shin_r))
-  val shout_r = (Cat(isSub(io.fn) & shin(xLen - 1), shin).asSInt >> shamt) (xLen - 1, 0)
-  val shout_l = Reverse(shout_r)
-  val shout = Mux(io.fn === FN_SR || io.fn === FN_SRA, shout_r, UInt(0)) |
+  val shin            = Mux(io.fn === FN_SR || io.fn === FN_SRA, shin_r, Reverse(shin_r))
+  val shout_r         = (Cat(isSub(io.fn) & shin(xLen - 1), shin).asSInt >> shamt)(xLen - 1, 0)
+  val shout_l         = Reverse(shout_r)
+  val shout           = Mux(io.fn === FN_SR || io.fn === FN_SRA, shout_r, UInt(0)) |
     Mux(io.fn === FN_SL, shout_l, UInt(0))
 
   // AND, OR, XOR
-  val logic = Mux(io.fn === FN_XOR || io.fn === FN_OR, in1_xor_in2, UInt(0)) |
+  val logic       = Mux(io.fn === FN_XOR || io.fn === FN_OR, in1_xor_in2, UInt(0)) |
     Mux(io.fn === FN_OR || io.fn === FN_AND, io.in1 & io.in2, UInt(0))
   val shift_logic = (isCmp(io.fn) && slt) | logic | shout
-  val out = Mux(io.fn === FN_ADD || io.fn === FN_SUB, io.adder_out, shift_logic)
+  val out         = Mux(io.fn === FN_ADD || io.fn === FN_SUB, io.adder_out, shift_logic)
 
   io.out := out
 }

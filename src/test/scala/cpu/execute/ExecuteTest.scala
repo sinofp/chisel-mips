@@ -13,7 +13,7 @@ class ExecuteTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   it should "capable to sub" in {
     test(new Execute) { c =>
-      val testValues = for {x <- 10 to 20; y <- 0 to 10} yield (x, y)
+      val testValues = for { x <- 10 to 20; y <- 0 to 10 } yield (x, y)
 
       import c._
       testValues.foreach { case (x, y) =>
@@ -30,14 +30,14 @@ class ExecuteTest extends FlatSpec with ChiselScalatestTester with Matchers {
     test(new Execute) { c =>
       // 0, 1, -1, -2
       // 负数的话，用scala的Int转UInt有问题
-      Seq("0" * 32, "0" * 31 + "1", "1" * 32, "1" * 31 + "0").foreach(s => {
+      Seq("0" * 32, "0" * 31 + "1", "1" * 32, "1" * 31 + "0").foreach { s =>
         c.decode.num1.poke(("b" + s).U)
         c.decode.num2.poke(0.U)
         c.decode.br_type.poke(BR_TYPE_GE)
         c.decode.alu_fn.poke(FN_SLT)
         c.clock.step(1)
         c.fetch.branch.expect((s(0) == '0').B)
-      })
+      }
     }
   }
 }

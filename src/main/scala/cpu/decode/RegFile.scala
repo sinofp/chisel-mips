@@ -26,13 +26,12 @@ class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule
     reg(waddr) := wdata
   }
 
-  for (i <- 0 until readPorts) {
+  for (i <- 0 until readPorts)
     when(raddr(i) === 0.U) {
       rdata(i) := 0.U
     }.otherwise {
       rdata(i) := reg(raddr(i))
     }
-  }
 
   val t_regs = if (c.dTReg || c.dRegFile) Some(Wire(new TRegWindow())) else None
   if (t_regs.isDefined) {
@@ -43,7 +42,8 @@ class RegFile(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule
   }
   if (c.dRegFile) {
     val cnt = Counter(true.B, 100)
-    printf(p"[log RegFile]\n\tcycle = ${cnt._1}\n" + t_regs.get.getElements.reverse
-      .zipWithIndex.foldLeft(p"") { case (old, (treg: UInt, idx)) => old + p"\t$$t$idx = ${Hexadecimal(treg)}\n" })
+    printf(p"[log RegFile]\n\tcycle = ${cnt._1}\n" + t_regs.get.getElements.reverse.zipWithIndex.foldLeft(p"") {
+      case (old, (treg: UInt, idx)) => old + p"\t$$t$idx = ${Hexadecimal(treg)}\n"
+    })
   }
 }

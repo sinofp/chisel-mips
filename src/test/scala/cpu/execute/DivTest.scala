@@ -12,7 +12,7 @@ class DivTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   it should "do divu" in {
     test(new Div) { c =>
-      val testValues = for {x <- 10 to 20; y <- 1 to 20} yield (x, y)
+      val testValues = for { x <- 10 to 20; y <- 1 to 20 } yield (x, y)
       import c.io._
       testValues.foreach { case (x, y) =>
         dividend.poke(x.U)
@@ -28,7 +28,7 @@ class DivTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   it should "do div" in {
     test(new Div) { c =>
-      val testValues = for {x <- 10 to 20; y <- 1 to 20} yield (x, y)
+      val testValues = for { x <- 10 to 20; y <- 1 to 20 } yield (x, y)
       import c.io._
       testValues.foreach { case (x, y) =>
         dividend.poke(("b" + x.toBinaryString).U)
@@ -43,4 +43,3 @@ class DivTest extends FlatSpec with ChiselScalatestTester with Matchers {
     }
   }
 }
-

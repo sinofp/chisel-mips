@@ -10,10 +10,10 @@ class HILO(implicit c: Config = DefCon) extends Module {
   val io = IO(new Bundle() {
     val hi_wen = Input(Bool())
     val lo_wen = Input(Bool())
-    val _hi = Input(UInt(32.W))
-    val _lo = Input(UInt(32.W))
-    val hi = Output(UInt(32.W))
-    val lo = Output(UInt(32.W))
+    val _hi    = Input(UInt(32.W))
+    val _lo    = Input(UInt(32.W))
+    val hi     = Output(UInt(32.W))
+    val lo     = Output(UInt(32.W))
   })
 
   import io._

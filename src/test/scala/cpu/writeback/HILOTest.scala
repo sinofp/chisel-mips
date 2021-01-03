@@ -11,9 +11,9 @@ class HILOTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   it should "work as register files" in {
     test(new HILO) { c =>
-      val testValues = for {x <- 0 to 10; y <- 0 to 10} yield (x, y)
+      val testValues = for { x <- 0 to 10; y <- 0 to 10 } yield (x, y)
 
-      for (wen <- 0 to 1) {
+      for (wen <- 0 to 1)
         testValues.foreach { case (x, y) =>
           c.io.hi_wen.poke(wen.B)
           c.io._hi.poke(x.U)
@@ -22,7 +22,6 @@ class HILOTest extends FlatSpec with ChiselScalatestTester with Matchers {
           c.io.hi.expect(if (wen == 1) x.U else 0.U)
           c.io.lo.expect(0.U)
         }
-      }
     }
   }
 }

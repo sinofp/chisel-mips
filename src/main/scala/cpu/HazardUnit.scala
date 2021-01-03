@@ -11,37 +11,49 @@ import cpu.writeback.CP0._
 
 class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOModule {
   require(readPorts >= 0)
-  val fetch = IO(new Fetch2Hazard)
-  val decode = IO(new Decode2Hazard(readPorts))
-  val execute = IO(new Execute2Hazard)
-  val memory = IO(new Memory2Hazard)
+  val fetch     = IO(new Fetch2Hazard)
+  val decode    = IO(new Decode2Hazard(readPorts))
+  val execute   = IO(new Execute2Hazard)
+  val memory    = IO(new Memory2Hazard)
   val writeback = IO(new Writeback2Hazard)
 
   // RegFile 数据前推
-  val forward_port = (i: Int) => MuxCase(FORWARD_NO, Array(
-    (execute.rf.wen && (execute.rf.waddr =/= 0.U) && decode.raddr(i) === execute.rf.waddr) -> FORWARD_EXE,
-    (memory.rf.wen && (memory.rf.waddr =/= 0.U) && decode.raddr(i) === memory.rf.waddr) -> FORWARD_MEM,
-    (writeback.rf.wen && (writeback.rf.waddr =/= 0.U) && decode.raddr(i) === writeback.rf.waddr) -> FORWARD_WB,
-  ))
-  for (i <- 0 until readPorts) {
+  val forward_port = (i: Int) =>
+    MuxCase(
+      FORWARD_NO,
+      Array(
+        (execute.rf.wen && (execute.rf.waddr =/= 0.U) && decode.raddr(i) === execute.rf.waddr)       -> FORWARD_EXE,
+        (memory.rf.wen && (memory.rf.waddr =/= 0.U) && decode.raddr(i) === memory.rf.waddr)          -> FORWARD_MEM,
+        (writeback.rf.wen && (writeback.rf.waddr =/= 0.U) && decode.raddr(i) === writeback.rf.waddr) -> FORWARD_WB,
+      ),
+    )
+  for (i <- 0 until readPorts)
     decode.forward(i) := forward_port(i)
-  }
 
   // cp0数据前推
-  execute.forward_c0 := MuxCase(FORWARD_C0_NO, Array(
-    (memory.c0.wen && memory.c0.waddr === execute.c0_raddr) -> FORWARD_C0_MEM,
-    (writeback.c0.wen && writeback.c0.waddr === execute.c0_raddr) -> FORWARD_C0_WB,
-  ))
+  execute.forward_c0 := MuxCase(
+    FORWARD_C0_NO,
+    Array(
+      (memory.c0.wen && memory.c0.waddr === execute.c0_raddr)       -> FORWARD_C0_MEM,
+      (writeback.c0.wen && writeback.c0.waddr === execute.c0_raddr) -> FORWARD_C0_WB,
+    ),
+  )
 
   // HILO 数据前推到 Execute，主要为了 mfhi $1 后面的指令用到 $1
-  execute.forward_hi := MuxCase(FORWARD_HILO_NO, Array(
-    (memory.hi.wen && !execute.hi.wen) -> FORWARD_HILO_MEM,
-    (writeback.hi.wen && !execute.hi.wen) -> FORWARD_HILO_WB,
-  ))
-  execute.forward_lo := MuxCase(FORWARD_HILO_NO, Array(
-    (memory.lo.wen && !execute.lo.wen) -> FORWARD_HILO_MEM,
-    (writeback.lo.wen && !execute.lo.wen) -> FORWARD_HILO_WB,
-  ))
+  execute.forward_hi := MuxCase(
+    FORWARD_HILO_NO,
+    Array(
+      (memory.hi.wen && !execute.hi.wen)    -> FORWARD_HILO_MEM,
+      (writeback.hi.wen && !execute.hi.wen) -> FORWARD_HILO_WB,
+    ),
+  )
+  execute.forward_lo := MuxCase(
+    FORWARD_HILO_NO,
+    Array(
+      (memory.lo.wen && !execute.lo.wen)    -> FORWARD_HILO_MEM,
+      (writeback.lo.wen && !execute.lo.wen) -> FORWARD_HILO_WB,
+    ),
+  )
 
   // exception
   //                     ↓ EXCEPT_ERET
@@ -60,15 +72,19 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   // 这里给它 flush 信号，是用来刷新 PC，让它抓到异常处理程序的地址，也就是图里的 f6
   val entry = c.dExceptEntry.getOrElse("hbfc00380".U)
   fetch.flush := memory.except_type =/= 0.U
-  fetch.newpc := MuxLookup(memory.except_type, 0.U, Array(
-    EXCEPT_INT -> entry,
-    EXCEPT_SYSCALL -> entry,
-    EXCEPT_BREAK -> entry,
-    EXCEPT_INST_INVALID -> entry,
-    EXCEPT_TRAP -> entry,
-    EXCEPT_OVERFLOW -> entry,
-    EXCEPT_ERET -> memory.EPC,
-  ))
+  fetch.newpc := MuxLookup(
+    memory.except_type,
+    0.U,
+    Array(
+      EXCEPT_INT          -> entry,
+      EXCEPT_SYSCALL      -> entry,
+      EXCEPT_BREAK        -> entry,
+      EXCEPT_INST_INVALID -> entry,
+      EXCEPT_TRAP         -> entry,
+      EXCEPT_OVERFLOW     -> entry,
+      EXCEPT_ERET         -> memory.EPC,
+    ),
+  )
   val exception = fetch.flush
 
   //        ↓ load stall
@@ -92,23 +108,25 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
   val branch = execute.branch
 
   // stall
-  fetch.stall := (load_stall || execute.div_not_ready) && !exception
-  decode.stall := (load_stall || execute.div_not_ready) && !exception
-  execute.stall := execute.div_not_ready && !exception
-  memory.stall := DontCare
+  fetch.stall     := (load_stall || execute.div_not_ready) && !exception
+  decode.stall    := (load_stall || execute.div_not_ready) && !exception
+  execute.stall   := execute.div_not_ready && !exception
+  memory.stall    := DontCare
   writeback.stall := DontCare
 
   // flush
-  decode.flush := branch || exception
-  memory.flush := exception
-  execute.flush := load_stall || exception
+  decode.flush    := branch || exception
+  memory.flush    := exception
+  execute.flush   := load_stall || exception
   writeback.flush := exception
 
   if (c.dForward) {
     val cnt = Counter(true.B, 100)
-    printf(p"[log HazardUnit]\n\tcycle = ${cnt._1}\n" +
-      p"\tFORWARD(1): EXE = ${forward_port(0) === FORWARD_EXE}, MEM = ${forward_port(0) === FORWARD_MEM}, WB = ${forward_port(0) === FORWARD_WB}\n" +
-      p"\tFORWARD(2): EXE = ${forward_port(1) === FORWARD_EXE}, MEM = ${forward_port(1) === FORWARD_MEM}, WB = ${forward_port(1) === FORWARD_WB}\n" +
-      p"\tload stall = ${Binary(load_stall)}\n")
+    printf(
+      p"[log HazardUnit]\n\tcycle = ${cnt._1}\n" +
+        p"\tFORWARD(1): EXE = ${forward_port(0) === FORWARD_EXE}, MEM = ${forward_port(0) === FORWARD_MEM}, WB = ${forward_port(0) === FORWARD_WB}\n" +
+        p"\tFORWARD(2): EXE = ${forward_port(1) === FORWARD_EXE}, MEM = ${forward_port(1) === FORWARD_MEM}, WB = ${forward_port(1) === FORWARD_WB}\n" +
+        p"\tload stall = ${Binary(load_stall)}\n"
+    )
   }
 }

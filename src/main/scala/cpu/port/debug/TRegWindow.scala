@@ -5,7 +5,7 @@ package cpu.port.debug
 import chisel3._
 
 class TRegWindow(val debug: Boolean = true) extends Bundle {
-  val w = if (debug) 32.W else 0.W
+  val w  = if (debug) 32.W else 0.W
   val t0 = UInt(w)
   val t1 = UInt(w)
   val t2 = UInt(w)
