@@ -54,7 +54,7 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
         |_loop:
         |beq $0, $0, _loop
         |nop
-        |""".stripMargin), dBuiltinMem = true, dFetch = true, dTReg = true, dExcept = true)
+        |""".stripMargin), dBuiltinMem = true, dFetch = true, dTReg = true, dBrUnit = true, dForward = true, dDecode = true)
     test(new Top) { c =>
       def t1 = c.t_regs.get.t1.peek.litValue
 
@@ -146,6 +146,23 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.t_regs.get.t2.expect("h20000000".U)
       c.clock.step(1) // subu
       c.t_regs.get.t9.expect("h9fc00704".U)
+    }
+  }
+
+  it should "fragment 2 (only load stall)" in {
+    implicit val c: Config = Config(insts = marsDump(
+      """addi $t3, $0, 123
+        |sw $t3, 0($0)
+        |lw $t1, 0($0)
+        |add $t2, $0, $t1
+        |""".stripMargin), dTReg = true, dBuiltinMem = true,
+      dForward = true, dRegFile = true, dExecute = true)
+    test(new Top) { c =>
+      def t2 = c.t_regs.get.t1.peek.litValue
+
+      while (t2 != 123) {
+        c.clock.step(1)
+      }
     }
   }
 }

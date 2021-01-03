@@ -32,4 +32,6 @@ class Decode2Execute extends Bundle {
   val wdata = Input(UInt(32.W))
   val check_overflow = Output(Bool())
   val data_sram_en = Output(Bool())
+  val fwd_rdata1_mem = Output(Bool())
+  val fwd_rdata2_mem = Output(Bool())
 }

@@ -19,7 +19,10 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
 
   val inst = Wire(UInt(32.W))
   //  inst := RegNext(MuxCase(fetch.inst, Array(hazard.stall -> inst, hazard.flush -> 0.U)), 0.U)
-  inst := fetch.inst // todo stall被fetch处理了（pc stall=inst stall），但貌似flush的处理方式，decode和fetch不一样啊
+  //  inst := fetch.inst // todo stall被fetch处理了（pc stall=inst stall），但貌似flush的处理方式，decode和fetch不一样啊
+  val prev_stall = RegNext(hazard.stall, false.B)
+  val prev_inst = RegNext(inst)
+  inst := Mux(prev_stall, prev_inst, fetch.inst)
   val pcp4 = Wire(UInt(32.W))
   pcp4 := RegNext(Mux(hazard.stall, pcp4, fetch.pcp4), 0.U)
 
@@ -69,11 +72,13 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   hazard.prev_load := RegNext(Mux(hazard.stall, false.B, cu.ctrl.load), false.B)
   val forward_reg = (i: Int) => MuxLookup(hazard.forward(i), reg_file.io.rdata(i), Array(
     FORWARD_EXE -> execute.wdata,
-    FORWARD_MEM -> memory.wdata,
+    FORWARD_MEM -> memory.wdata, // memory阶段，但不一定是从内存读出来的
     FORWARD_WB -> writeBack.wdata,
   ))
   val rdata1 = forward_reg(0)
   val rdata2 = forward_reg(1)
+  execute.fwd_rdata1_mem := hazard.forward(0) === FORWARD_MEM
+  execute.fwd_rdata2_mem := hazard.forward(1) === FORWARD_MEM
 
   val imm_ext = MuxLookup(sel_imm, 0.U, Array(
     SEL_IMM_U -> Cat(0.U(16.W), imm),
@@ -104,4 +109,10 @@ class Decode(implicit c: Config = DefCon) extends MultiIOModule {
   ))
   execute.except_type := Cat(0.U(18.W), is_break, is_eret, 0.U(2.W), inst_invalid, is_syscall, 0.U(8.W))
   execute.is_in_delayslot := RegNext(sel_imm === SEL_IMM_J | execute.br_type =/= BR_TYPE_NO)
+
+  // debug
+  if (c.dDecode) {
+    val cnt = Counter(true.B, 100)
+    printf(p"[log Decode]\n\tcycle = ${cnt._1}\n\tinst = ${Hexadecimal(inst)}, hazard.stall = ${Binary(hazard.stall)}, hazard.flush = ${Binary(hazard.flush)}\n")
+  }
 }

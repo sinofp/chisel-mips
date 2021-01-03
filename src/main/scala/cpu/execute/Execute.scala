@@ -22,14 +22,17 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   val cu_div = Wire(Bool())
   val alu_fn = Wire(UInt(SZ_ALU_FN))
   val alu_n = Wire(Bool())
-  val num1 = Wire(UInt(32.W))
-  val num2 = Wire(UInt(32.W))
+  val decode_num1 = Wire(UInt(32.W))
+  val decode_num2 = Wire(UInt(32.W))
   val br_t = Wire(UInt(SZ_BR_TYPE))
   val sel_move = Wire(UInt(SZ_SEL_MOVE))
   val except_type = Wire(UInt(32.W))
   val overflow = WireInit(Bool(), false.B)
   val trap = WireInit(Bool(), false.B)
   val check_overflow = WireInit(Bool(), false.B)
+  val fwd_rdata1_mem = WireInit(Bool(), false.B)
+  val fwd_rdata2_mem = WireInit(Bool(), false.B)
+  val fwd_load = WireInit(Bool(), false.B)
 
   // RegStallOrNext
   Seq(
@@ -37,8 +40,8 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     cu_div -> decode.div,
     alu_fn -> decode.alu_fn,
     alu_n -> decode.alu_n,
-    num1 -> decode.num1,
-    num2 -> decode.num2,
+    decode_num1 -> decode.num1,
+    decode_num2 -> decode.num2,
     br_t -> Mux(hazard.flush, BR_TYPE_NO, decode.br_type),
     fetch.br_addr -> decode.br_addr,
     sel_move -> decode.sel_move,
@@ -56,9 +59,14 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
     memory.is_in_delayslot -> Mux(hazard.flush, false.B, decode.is_in_delayslot),
     except_type -> Mux(hazard.flush, 0.U, decode.except_type),
     check_overflow -> Mux(hazard.flush, false.B, decode.check_overflow),
-    memory.data_sram_en -> Mux(hazard.flush, false.B, decode.data_sram_en)
+    memory.data_sram_en -> Mux(hazard.flush, false.B, decode.data_sram_en),
+    fwd_load -> memory.fwd_rf_load,
+    fwd_rdata1_mem -> decode.fwd_rdata1_mem,
+    fwd_rdata2_mem -> decode.fwd_rdata2_mem,
   ).foreach { case (reg, next) => reg := RegNext(Mux(hazard.stall, reg, next), 0.U) }
 
+  val num1 = Mux(fwd_load && fwd_rdata1_mem, memory.fwd_rf_ldata, decode_num1)
+  val num2 = Mux(fwd_load && fwd_rdata2_mem, memory.fwd_rf_ldata, decode_num2)
   // alu
   val alu = Module(new ALU)
   locally {
@@ -154,5 +162,9 @@ class Execute(implicit c: Config = DefCon) extends MultiIOModule {
   }
   if (c.dBrUnit) {
     printf(p"[log execute]\n\tbranch = ${fetch.branch}, br_addr >> 2 = ${fetch.br_addr / 4.U}\n")
+  }
+  if (c.dForward) {
+    printf(p"[log execute]\n\tfwd from mem = $fwd_rdata1_mem, $fwd_rdata2_mem, fwd is load = $fwd_load, load data = ${Hexadecimal(memory.fwd_rf_ldata)}\n " +
+      p"\tnum1 = ${Hexadecimal(num1)}, decode.num1 = ${Hexadecimal(decode_num1)}, num2 = ${Hexadecimal(num2)}, decode.num2 = ${Hexadecimal(decode_num2)}\n")
   }
 }

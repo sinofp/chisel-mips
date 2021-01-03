@@ -55,8 +55,7 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
       MEM_H -> "b0011".U,
       MEM_B -> "b0001".U,
     )), 0.U), 0.U)
-    // 要写的话，用本阶段地址；要读的话，用上阶段地址，保证读这周期（=上阶段的下周期）给出正确值
-    addr := Mux(mem_wen, writeback.alu_out, execute.alu_out)
+    addr := writeback.alu_out
     wdata := mem_wdata
     writeback.mem_rdata := MuxLookup(mem_size, rdata, Array(
       MEM_HU -> Cat(Fill(16, 0.U), rdata(15, 0)),
@@ -78,11 +77,12 @@ class Memory(implicit c: Config = DefCon) extends MultiIOModule {
   execute.fwd_hi.wdata := writeback.hi.wdata
   execute.fwd_lo.wdata := writeback.lo.wdata
   execute.fwd_c0.wdata := writeback.c0.wdata
-  decode.wdata := MuxCase(0.U, Array(
-    (writeback.sel_reg_wdata === SEL_REG_WDATA_EX) -> writeback.alu_out,
-    (writeback.sel_reg_wdata === SEL_REG_WDATA_LNK) -> writeback.pcp8,
-    (writeback.sel_reg_wdata === SEL_REG_WDATA_MEM) -> writeback.mem_rdata,
+  decode.wdata := MuxLookup(0.U, writeback.sel_reg_wdata, Array(
+    SEL_REG_WDATA_EX -> writeback.alu_out,
+    SEL_REG_WDATA_LNK -> writeback.pcp8,
   ))
+  execute.fwd_rf_load := writeback.sel_reg_wdata === SEL_REG_WDATA_MEM
+  execute.fwd_rf_ldata := writeback.mem_rdata
 
   // forward cp0 to here
   // 不能直接在Input上:=，所以得用asTypeOf创建一个Wire，在Wire上:=

@@ -22,7 +22,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   val pcp8 = Wire(UInt(32.W))
   val pc_now = pcp8 - 8.U
   val sel_reg_wdata = Wire(UInt(32.W))
-  val mem_rdata = Wire(UInt(32.W))
+//  val mem_rdata = Wire(UInt(32.W))
   val alu_out = Wire(UInt(32.W))
   val hi_wen = Wire(Bool())
   val hi = Wire(chiselTypeOf(memory.hi))
@@ -41,7 +41,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   Seq(
     pcp8 -> memory.pcp8,
     sel_reg_wdata -> memory.sel_reg_wdata,
-    mem_rdata -> memory.mem_rdata,
+    //    mem_rdata -> memory.mem_rdata,
     alu_out -> memory.alu_out,
     hi_wen -> Mux(hazard.flush, 0.U, memory.hi.wen),
     hi -> memory.hi,
@@ -94,7 +94,7 @@ class WriteBack(implicit c: Config = DefCon) extends MultiIOModule {
   decode.wdata := MuxLookup(sel_reg_wdata, 0.U, Array(
     SEL_REG_WDATA_EX -> alu_out,
     SEL_REG_WDATA_LNK -> pcp8,
-    SEL_REG_WDATA_MEM -> mem_rdata,
+    SEL_REG_WDATA_MEM -> memory.mem_rdata,
   ))
 
   // forward reg

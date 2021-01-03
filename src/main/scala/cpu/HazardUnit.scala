@@ -108,6 +108,7 @@ class HazardUnit(readPorts: Int)(implicit c: Config = DefCon) extends MultiIOMod
     val cnt = Counter(true.B, 100)
     printf(p"[log HazardUnit]\n\tcycle = ${cnt._1}\n" +
       p"\tFORWARD(1): EXE = ${forward_port(0) === FORWARD_EXE}, MEM = ${forward_port(0) === FORWARD_MEM}, WB = ${forward_port(0) === FORWARD_WB}\n" +
-      p"\tFORWARD(2): EXE = ${forward_port(1) === FORWARD_EXE}, MEM = ${forward_port(1) === FORWARD_MEM}, WB = ${forward_port(1) === FORWARD_WB}\n")
+      p"\tFORWARD(2): EXE = ${forward_port(1) === FORWARD_EXE}, MEM = ${forward_port(1) === FORWARD_MEM}, WB = ${forward_port(1) === FORWARD_WB}\n" +
+      p"\tload stall = ${Binary(load_stall)}\n")
   }
 }
