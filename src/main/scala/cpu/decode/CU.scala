@@ -55,13 +55,13 @@ class CtrlSigs extends Bundle {
     MULT    -> m(FN_MULT, mul = 1),
     MULTU   -> m(FN_MULTU, mul = 1),
     AND     -> r(FN_AND),
-    ANDI    -> i(FN_AND),
+    ANDI    -> i(FN_AND, logic = true),
     LUI     -> i(FN_ADD, lui = true),
     NOR     -> r(FN_OR, 1),
     OR      -> r(FN_OR),
-    ORI     -> i(FN_OR),
+    ORI     -> i(FN_OR, logic = true),
     XOR     -> r(FN_XOR),
-    XORI    -> i(FN_XOR),
+    XORI    -> i(FN_XOR, logic = true),
     SLLV    -> sft(FN_SL, v = true),
     SLL     -> sft(FN_SL),
     SRAV    -> sft(FN_SRA, v = true),
@@ -160,9 +160,9 @@ class CtrlSigs extends Bundle {
     data_sram_en = 1,
   )
 
-  private def i(alu_fn: B, lui: Boolean = false, check_overflow: B = 0): List[B] = dft(
+  private def i(alu_fn: B, lui: Boolean = false, logic: Boolean = false, check_overflow: B = 0): List[B] = dft(
     sel_alu2 = SEL_ALU2_IMM,
-    sel_imm = if (lui) SEL_IMM_LUI else SEL_IMM_S,
+    sel_imm = if (lui) SEL_IMM_LUI else if (logic) SEL_IMM_U else SEL_IMM_S, // todo andi, ori, xori SEL_IMM_U
     alu_fn = alu_fn,
     reg_wen = 1,
     sel_reg_waddr = SEL_REG_WADDR_RT,

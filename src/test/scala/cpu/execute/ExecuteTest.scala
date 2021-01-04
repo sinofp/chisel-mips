@@ -26,6 +26,28 @@ class ExecuteTest extends FlatSpec with ChiselScalatestTester with Matchers {
     }
   }
 
+  it should "capable to or" in {
+    test(new Execute) { c =>
+      val testValues = for { x <- 10 to 20; y <- 0 to 10 } yield (x, y)
+
+      import c._
+      testValues.foreach { case (x, y) =>
+        decode.alu_fn.poke(FN_OR)
+        decode.num1.poke(x.U)
+        decode.num2.poke(y.U)
+        clock.step(1)
+        println(s"x is $x y is $y or is ${x | y}")
+        memory.alu_out.expect((x | y).U)
+      }
+      // fragments 3
+      decode.alu_fn.poke(FN_OR)
+      decode.num1.poke("hbfaf0000".U)
+      decode.num2.poke(0x8000.U)
+      clock.step(1)
+      memory.alu_out.expect("hbfaf8000".U)
+    }
+  }
+
   it should "handle branch properly" in {
     test(new Execute) { c =>
       // 0, 1, -1, -2

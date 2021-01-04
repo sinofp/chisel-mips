@@ -167,9 +167,6 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
                          |""".stripMargin),
       dTReg = true,
       dBuiltinMem = true,
-      dForward = true,
-      dRegFile = true,
-      dExecute = true,
     )
     test(new Top) { c =>
       c.clock.step(5) // lui
@@ -192,15 +189,29 @@ class TopTest extends FlatSpec with ChiselScalatestTester with Matchers {
                          |""".stripMargin),
       dTReg = true,
       dBuiltinMem = true,
-      dForward = true,
-      dRegFile = true,
-      dExecute = true,
     )
     test(new Top) { c =>
-      def t2 = c.t_regs.get.t1.peek.litValue
+      def t2 = c.t_regs.get.t2.peek.litValue
 
       while (t2 != 123)
         c.clock.step(1)
+    }
+  }
+
+  it should "fragment 3 (ori)" in {
+    implicit val c: Config = Config(
+      insts = marsDump("""lui $t1, 0xbfaf
+                         |ori $t1, $t1, 0x8000
+                         |""".stripMargin),
+      dTReg = true,
+      dBuiltinMem = true,
+      dExecute = true,
+    )
+    test(new Top) { c =>
+      c.clock.step(5)
+      c.t_regs.get.t1.expect("hbfaf0000".U)
+      c.clock.step(1)
+      c.t_regs.get.t1.expect("hbfaf8000".U)
     }
   }
 }
