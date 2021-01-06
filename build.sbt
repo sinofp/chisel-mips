@@ -26,3 +26,10 @@ scalacOptions ++= Seq(
 )
 
 mainClass in (Compile, run) := Some("cpu.Top")
+
+lazy val getMars = TaskKey[Unit]("download Mars for test")
+getMars      := {
+  import sys.process._
+  "wget --quiet --continue --show-progress http://courses.missouristate.edu/kenvollmar/mars/MARS_4_5_Aug2014/Mars4_5.jar" !
+}
+test in Test := ((test in Test) dependsOn getMars).value
